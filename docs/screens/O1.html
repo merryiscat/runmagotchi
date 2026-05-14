@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O1 · 시작 / 컨셉 소개 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">O1 · 시작 / 컨셉 소개 <small>· 작성 2026-05-14</small></div>
+      <dl>
+        <dt>목적</dt><dd>첫 진입에서 컨셉을 1초 안에 전달하고 시작 CTA 노출</dd>
+        <dt>진입점</dt><dd>앱 설치 후 첫 실행 · PWA 첫 방문 · 로그아웃 상태에서 루트 진입</dd>
+        <dt>다음</dt><dd>[시작하기] → <a href="O2.html">O2 소셜 로그인 선택</a></dd>
+        <dt>권한</dt><dd>비로그인. 어떤 권한도 요청하지 않음</dd>
+      </dl>
+    </div>
+
+    <div class="frame frame--app">
+      <div class="frame__body">
+
+        <div class="text-center text-sm text-muted mb-5">Runmagotchi</div>
+
+        <div class="text-center mb-5">
+          <div class="img-ph img-ph--char" style="margin: 0 auto;">캐릭터</div>
+        </div>
+
+        <div class="text-center stack stack--sm mb-5">
+          <div class="text-2xl fw-bold">달리면 자라는<br />나의 캐릭터</div>
+          <div class="text-sm text-muted" style="margin-top: var(--s-3);">
+            런닝 기록을 올리면 캐릭터가 함께 자라요.<br />
+            매일의 한 걸음이 나만의 동반자를 만듭니다.
+          </div>
+        </div>
+
+        <div class="mt-auto">
+          <a class="btn btn--primary btn--full btn--lg" href="O2.html">시작하기</a>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">O1 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>첫 진입에서 "런닝 → 캐릭터 성장"이라는 컨셉을 한 문장으로 즉시 전달.</li>
+          <li>"운명 / 사주" 단어 미사용 — 사주는 100% 내부 시드, 가입 이후에도 사용자에게 노출하지 않는다는 원칙.</li>
+          <li>CTA 단일화. 소셜 로그인 종류 선택은 다음 화면(O2)으로 분리해 첫 화면 인지 부담을 낮춤.</li>
+          <li>캐릭터 일러스트는 와이어 단계에서 placeholder. 실제 단계에서는 ART_STYLE_GUIDE 기반 알/일러스트 사용.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>다단계 캐러셀(스와이프 3장)로 컨셉 소개 — 첫 진입 이탈률·전환 지연 우려로 단일 화면 선택.</li>
+          <li>로그인 버튼 3종을 첫 화면에 바로 노출 — 첫 화면 정보량 과다로 보류.</li>
+          <li>캐릭터 대신 런닝 일러스트 — 핵심이 "캐릭터 성장"이라 캐릭터 우선.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>캐릭터 일러스트 톤 — 실루엣 한 컷 vs 디테일 있는 알 일러스트.</li>
+          <li>메인 카피 워딩 — "달리면 자라는 나의 캐릭터" 외 대안 풀 필요.</li>
+          <li>로고 위치·크기 — 상단 작게 vs 중앙 큼직하게.</li>
+          <li>"이미 계정 있어요" 별도 진입선 필요한지 — 소셜 로그인이 가입·로그인 겸용이라 일단 미포함.</li>
+          <li>PWA 설치 안내 배너 위치 (이 화면 vs 메인 진입 후).</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

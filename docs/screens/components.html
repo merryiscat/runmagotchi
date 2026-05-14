@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Runmagotchi 와이어 컴포넌트 카탈로그</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .catalog { max-width: 720px; margin: 0 auto; padding: var(--s-5) var(--s-4); }
+  .catalog h1 { font-size: var(--fs-2xl); margin-bottom: var(--s-2); }
+  .catalog > p { color: var(--c-2); font-size: var(--fs-sm); margin-bottom: var(--s-6); }
+  .catalog section { margin-bottom: var(--s-7); }
+  .catalog h2 { font-size: var(--fs-lg); border-bottom: 1px solid var(--c-3); padding-bottom: var(--s-2); margin-bottom: var(--s-4); }
+  .catalog__demo { padding: var(--s-4); border: 1px dashed var(--c-3); background: var(--c-6); margin-bottom: var(--s-3); }
+  .catalog__code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--fs-xs); background: var(--c-5); padding: var(--s-3); white-space: pre-wrap; color: var(--c-1); }
+</style>
+</head>
+<body>
+<div class="catalog">
+
+  <h1>와이어 컴포넌트 카탈로그</h1>
+  <p>화면 작성 시 여기서 마크업을 복사해 사용한다. 흑백 6단계 회색만 사용. 색·그림자·그라데이션 금지.</p>
+
+  <section>
+    <h2>버튼</h2>
+    <div class="catalog__demo">
+      <div class="stack stack--sm">
+        <button class="btn btn--primary btn--full">시작하기</button>
+        <button class="btn btn--full">취소</button>
+        <button class="btn" disabled>비활성</button>
+      </div>
+    </div>
+    <pre class="catalog__code">&lt;button class="btn btn--primary btn--full"&gt;시작하기&lt;/button&gt;
+&lt;button class="btn btn--full"&gt;취소&lt;/button&gt;
+&lt;button class="btn" disabled&gt;비활성&lt;/button&gt;</pre>
+  </section>
+
+  <section>
+    <h2>입력</h2>
+    <div class="catalog__demo">
+      <input class="input" placeholder="생년월일 (예: 1990-01-01)" />
+    </div>
+    <pre class="catalog__code">&lt;input class="input" placeholder="생년월일 (예: 1990-01-01)" /&gt;</pre>
+  </section>
+
+  <section>
+    <h2>카드</h2>
+    <div class="catalog__demo">
+      <div class="card">
+        <div class="fw-bold mb-2">{캐릭터 이름}</div>
+        <div class="text-sm text-muted">한 줄 설명이 들어가는 자리</div>
+      </div>
+    </div>
+    <pre class="catalog__code">&lt;div class="card"&gt;
+  &lt;div class="fw-bold mb-2"&gt;{캐릭터 이름}&lt;/div&gt;
+  &lt;div class="text-sm text-muted"&gt;한 줄 설명&lt;/div&gt;
+&lt;/div&gt;</pre>
+  </section>
+
+  <section>
+    <h2>리스트</h2>
+    <div class="catalog__demo">
+      <ul class="list">
+        <li class="list-item"><span>{날짜}</span><span class="spacer"></span><span>{거리} km</span></li>
+        <li class="list-item"><span>{날짜}</span><span class="spacer"></span><span>{거리} km</span></li>
+        <li class="list-item"><span>{날짜}</span><span class="spacer"></span><span>{거리} km</span></li>
+      </ul>
+    </div>
+    <pre class="catalog__code">&lt;ul class="list"&gt;
+  &lt;li class="list-item"&gt;&lt;span&gt;{날짜}&lt;/span&gt;&lt;span class="spacer"&gt;&lt;/span&gt;&lt;span&gt;{거리} km&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;</pre>
+  </section>
+
+  <section>
+    <h2>탑바</h2>
+    <div class="catalog__demo">
+      <div style="border: 1px solid var(--c-1); background: var(--c-6);">
+        <div class="topbar" style="margin: 0;">
+          <span>←</span>
+          <span class="topbar__title">화면 이름</span>
+          <span>　</span>
+        </div>
+        <div style="padding: var(--s-4); color: var(--c-2);">본문 영역</div>
+      </div>
+    </div>
+    <pre class="catalog__code">&lt;div class="topbar"&gt;
+  &lt;span&gt;←&lt;/span&gt;
+  &lt;span class="topbar__title"&gt;화면 이름&lt;/span&gt;
+  &lt;span&gt;　&lt;/span&gt;
+&lt;/div&gt;</pre>
+  </section>
+
+  <section>
+    <h2>이미지 플레이스홀더</h2>
+    <div class="catalog__demo">
+      <div class="row" style="gap: var(--s-4);">
+        <div class="img-ph img-ph--char">캐릭터</div>
+        <div class="img-ph img-ph--square" style="width: 120px;">이미지</div>
+      </div>
+    </div>
+    <pre class="catalog__code">&lt;div class="img-ph img-ph--char"&gt;캐릭터&lt;/div&gt;
+&lt;div class="img-ph img-ph--square"&gt;이미지&lt;/div&gt;</pre>
+  </section>
+
+  <section>
+    <h2>사용자 데이터 토큰</h2>
+    <div class="catalog__demo">
+      <p>안녕하세요, <span class="token">{사용자 이름}</span>님. 오늘은 <span class="token">{거리}</span>km를 달렸어요.</p>
+    </div>
+    <pre class="catalog__code">&lt;span class="token"&gt;{사용자 이름}&lt;/span&gt;</pre>
+  </section>
+
+  <p class="text-sm text-muted" style="margin-top: var(--s-6);">
+    필요한 컴포넌트가 더 생기면 여기 추가한다 (모달, 바텀시트, 스켈레톤 등).
+  </p>
+
+</div>
+</body>
+</html>
