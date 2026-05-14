@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>U1 · 업로드 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .u1-layout {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--s-5);
+  }
+
+  /* 드롭존 */
+  .dropzone {
+    border: 2px dashed var(--c-3);
+    padding: var(--s-7);
+    text-align: center;
+    cursor: pointer;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-3);
+  }
+
+  .dropzone:hover { border-color: var(--c-1); }
+
+  .dropzone__icon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--c-3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xl);
+    color: var(--c-3);
+  }
+
+  /* 파싱 결과 */
+  .parse-result {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-4);
+  }
+
+  @media (min-width: 768px) {
+    .parse-result { grid-template-columns: 200px 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+
+  .field__label {
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+  }
+
+  .field__value {
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--c-3);
+    font-size: var(--fs-md);
+    font-family: inherit;
+    background: var(--c-6);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  .field__value--editable {
+    border-color: var(--c-1);
+    cursor: text;
+  }
+
+  /* 스크린샷 미리보기 */
+  .preview {
+    border: 1px solid var(--c-3);
+    aspect-ratio: 9 / 16;
+    max-height: 400px;
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--c-3);
+    font-size: var(--fs-sm);
+    background:
+      linear-gradient(to bottom right, transparent calc(50% - 1px), var(--c-4) 50%, transparent calc(50% + 1px)),
+      linear-gradient(to bottom left, transparent calc(50% - 1px), var(--c-4) 50%, transparent calc(50% + 1px));
+    background-color: var(--c-6);
+  }
+
+  /* 탑바 */
+  .u1-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-4);
+    margin-bottom: var(--s-5);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">U1 · 업로드 <small>· 작성 2026-05-15</small></div>
+      <dl>
+        <dt>목적</dt><dd>런닝 앱 스크린샷 업로드 → VLM 파싱 → 결과 확인/보정 → 확정</dd>
+        <dt>진입점</dt><dd>M1 [업로드] 버튼 · GNB 업로드</dd>
+        <dt>다음</dt><dd>[확정] → <a href="M1.html">M1 메인</a> (EXP 적용 완료) · 부화 조건 충족 시 부화 연출</dd>
+        <dt>권한</dt><dd>로그인 필수</dd>
+        <dt>상태</dt><dd>① 업로드 → ①-b 중복 차단 → ② 파싱 중 → ③ 결과 확인 → ④ 확정</dd>
+      </dl>
+    </div>
+
+    <!-- ===== 상태 ① 업로드 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2);">상태 ① — 업로드</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="u1-layout">
+        <div class="u1-topbar">
+          <a class="text-sm" href="M1.html">← 돌아가기</a>
+          <span class="text-sm fw-bold">업로드</span>
+          <span style="width: 60px;"></span>
+        </div>
+
+        <div class="dropzone">
+          <div class="dropzone__icon">↑</div>
+          <div class="text-sm text-muted">스크린샷 드래그 또는 클릭</div>
+          <div class="text-xs text-muted">Strava · 나이키런 · 삼성헬스 등</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 상태 ①-b 중복 차단 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2); margin-top: var(--s-7);">상태 ①-b — 중복 이미지 차단</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="u1-layout">
+        <div class="u1-topbar">
+          <a class="text-sm" href="M1.html">← 돌아가기</a>
+          <span class="text-sm fw-bold">업로드</span>
+          <span style="width: 60px;"></span>
+        </div>
+
+        <div style="text-align: center; padding: var(--s-7) 0;">
+          <div style="width: 48px; height: 48px; border: 2px solid var(--c-1); border-radius: 50%; margin: 0 auto var(--s-4); display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); color: var(--c-1);">✕</div>
+          <div class="text-sm fw-bold mb-2">이미 등록된 스크린샷</div>
+          <div class="text-xs text-muted mb-5">동일한 이미지는 다시 등록할 수 없음</div>
+          <button class="btn" onclick="history.back()">다른 이미지 선택</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 상태 ② 파싱 중 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2); margin-top: var(--s-7);">상태 ② — 파싱 중</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="u1-layout">
+        <div class="u1-topbar">
+          <a class="text-sm" href="M1.html">← 돌아가기</a>
+          <span class="text-sm fw-bold">업로드</span>
+          <span style="width: 60px;"></span>
+        </div>
+
+        <div style="display: flex; gap: var(--s-5); align-items: flex-start;">
+          <div class="preview" style="width: 160px; flex-shrink: 0;">스크린샷</div>
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 200px;">
+            <div class="text-sm text-muted">파싱 중...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 상태 ③ 결과 확인 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2); margin-top: var(--s-7);">상태 ③ — 결과 확인 / 보정</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="u1-layout">
+        <div class="u1-topbar">
+          <a class="text-sm" href="M1.html">← 돌아가기</a>
+          <span class="text-sm fw-bold">업로드</span>
+          <span style="width: 60px;"></span>
+        </div>
+
+        <div style="display: flex; gap: var(--s-5); align-items: flex-start; flex-wrap: wrap;">
+
+          <!-- 스크린샷 미리보기 -->
+          <div class="preview" style="width: 160px; flex-shrink: 0;">스크린샷</div>
+
+          <!-- 파싱 결과 필드 -->
+          <div style="flex: 1; min-width: 280px;">
+
+            <div class="field mb-3">
+              <div class="field__label">거리</div>
+              <div class="field__value field__value--editable">5.2 km</div>
+            </div>
+
+            <div class="field mb-3">
+              <div class="field__label">시간</div>
+              <div class="field__value field__value--editable">28분 40초</div>
+            </div>
+
+            <div class="field mb-3">
+              <div class="field__label">페이스</div>
+              <div class="field__value">05:32 /km</div>
+            </div>
+
+            <div class="field mb-5">
+              <div class="field__label">날짜</div>
+              <div class="field__value field__value--editable">2026-05-15</div>
+            </div>
+
+            <div class="text-xs text-muted mb-4">확정 후 수정·삭제 불가</div>
+
+            <div style="display: flex; gap: var(--s-3);">
+              <button class="btn" style="flex: 1;">취소</button>
+              <button class="btn btn--primary" style="flex: 2;">확정</button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">U1 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>흐름: 업로드 → (중복 체크) → 파싱 → 확인/확정. 한 화면에서 상태 전환.</li>
+          <li>중복 이미지 차단: SHA-256 해시로 동일 이미지 즉시 차단. 부정 방지 Gate A.</li>
+          <li>파싱 필드 4개만: 거리·시간·페이스·날짜. 실제 런닝앱 스크린샷에서 보이는 것만.</li>
+          <li>거리·시간·날짜는 수동 보정 가능. 페이스는 거리/시간에서 자동 계산 (읽기 전용).</li>
+          <li>확정 후 수정·삭제 불가 — 부정 방지 원칙.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>업로드와 결과를 별도 화면(U1→U2)으로 분리 — 한 화면이 더 빠르고 직관적.</li>
+          <li>수동 보정 없이 파싱 결과 그대로 확정 — VLM 오인식 시 대처 불가.</li>
+          <li>확정 전 "정말 확정?" 모달 — 경고 텍스트면 충분, 모달은 과잉.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>VLM 파싱 실패 시 UX — 전체 수동 입력 fallback? 재업로드 유도?</li>
+          <li>심박수 필드 추가 여부 — 앱마다 제공 유무 다름.</li>
+          <li>부정 방지 Gate B/C 검증 결과를 이 화면에서 보여줄지, 확정 후 별도 처리할지.</li>
+          <li>다중 이미지 업로드 (한 번에 여러 기록) — MVP에서는 1건씩.</li>
+          <li>모바일에서 카메라 직접 촬영 옵션.</li>
+          <li>파싱 소요 시간 — 로딩 인디케이터 디테일.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

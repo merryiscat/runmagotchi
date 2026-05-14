@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M1 · 메인 대시보드 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  /* M1 — 좌 스테이지 / 우 패널 */
+  .m1-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .m1-layout { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* 스테이지 */
+  .stage {
+    position: relative;
+    background: var(--c-5);
+    border-right: 1px solid var(--c-4);
+    min-height: 400px;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .stage { min-height: 560px; }
+  }
+
+  .stage__char {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 1px dashed var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+
+  .stage__footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-4);
+    text-align: center;
+  }
+
+  .stage__label {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--c-3);
+  }
+
+  .exp-track { height: 6px; background: var(--c-5); width: 100%; }
+  .exp-fill { height: 6px; background: var(--c-1); }
+
+  /* 우측 패널 */
+  .panel { display: flex; flex-direction: column; }
+
+  .panel__section {
+    padding: var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .panel__section:last-child { border-bottom: none; }
+
+  /* 스탯 */
+  .stats-row { display: flex; gap: var(--s-4); text-align: center; }
+  .stats-row > div { flex: 1; }
+  .stat-v { font-size: var(--fs-xl); font-weight: 700; }
+  .stat-l { font-size: var(--fs-xs); color: var(--c-2); }
+
+  /* 기간 드롭다운 */
+  .period-select {
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--c-3);
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    background: var(--c-6);
+    color: var(--c-1);
+    cursor: pointer;
+  }
+
+  /* 기록 리스트 */
+  .run-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-5);
+    font-size: var(--fs-sm);
+  }
+  .run-row:last-child { border-bottom: none; }
+
+  /* GNB */
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+  .gnb__nav a:hover { color: var(--c-0); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">M1 · 메인 대시보드 <small>· 작성 2026-05-15</small></div>
+      <dl>
+        <dt>목적</dt><dd>로그인 후 기본 화면. 좌 스테이지(캐릭터 자유 이동) + 우 패널(스탯·업로드·기록)</dd>
+        <dt>진입점</dt><dd>O2 알 선택 완료 · 로그인 후 기본 · 네비</dd>
+        <dt>다음</dt><dd>업로드 → <a href="U1.html">U1</a> · 칭호 → <a href="B1.html">B1</a> · 프로필 → <a href="P1.html">P1</a> · 전체 기록 → <a href="M2.html">M2</a></dd>
+        <dt>권한</dt><dd>로그인 필수</dd>
+        <dt>상태</dt><dd>A = 알 (부화 전) · B = 캐릭터 (부화 후)</dd>
+      </dl>
+    </div>
+
+    <!-- ===== 상태 A: 알 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2);">상태 A — 알 (부화 전)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <!-- 스테이지: 알 고정 + 미세 모션 -->
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 알 고정, 미세 모션 (흔들림/꿈틀)</div>
+          <div class="stage__char" style="top: 42%; left: 42%;">알</div>
+        </div>
+        <!-- 패널: 업로드 유도 -->
+        <div class="panel">
+          <div class="panel__section" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+              <a class="btn btn--primary btn--lg" href="U1.html" style="min-width: 180px;">업로드</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 상태 B: 캐릭터 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2); margin-top: var(--s-7);">상태 B — 캐릭터 (부화 후)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <!-- 좌: 스테이지 -->
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 캐릭터 자유 이동</div>
+          <div class="stage__char" style="top: 40%; left: 35%;">캐릭터</div>
+          <div class="stage__footer">
+            <div class="fw-bold text-sm">{캐릭터 이름}</div>
+            <div class="text-xs text-muted" style="margin-top: var(--s-1);">Lv.<span class="token">{레벨}</span></div>
+          </div>
+        </div>
+
+        <!-- 우: 패널 -->
+        <div class="panel">
+
+          <!-- 스탯 + 기간 드롭다운 -->
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select">
+                <option>이번 달</option>
+                <option>지난 달</option>
+                <option>최근 3개월</option>
+                <option>올해</option>
+                <option>전체</option>
+                <option>기간 설정</option>
+              </select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+
+          <!-- 업로드 -->
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+
+          <!-- 최근 기록 -->
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div>
+                <div class="text-sm fw-bold">5.2 km</div>
+                <div class="text-xs text-muted">05:32 /km · 28분</div>
+              </div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+            <div class="run-row">
+              <div>
+                <div class="text-sm fw-bold">3.8 km</div>
+                <div class="text-xs text-muted">05:48 /km · 22분</div>
+              </div>
+              <div class="text-xs text-muted">어제</div>
+            </div>
+            <div class="run-row">
+              <div>
+                <div class="text-sm fw-bold">10.1 km</div>
+                <div class="text-xs text-muted">05:15 /km · 53분</div>
+              </div>
+              <div class="text-xs text-muted">3일 전</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">M1 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>시안 B 채택: 좌 스테이지 / 우 패널. 캐릭터가 항상 시야에.</li>
+          <li>스테이지: 알은 고정+미세 모션(흔들림/꿈틀), 캐릭터는 자유 이동 (Sprite+JS).</li>
+          <li>부화 조건: 누적 10km 달성. 진행도 비공개 — 어느 순간 깨어나는 서프라이즈. 달성 시 알 깨지는 연출 → 캐릭터 등장 + 이름 짓기.</li>
+          <li>스탯 기간 드롭다운: 이번 달/지난 달/3개월/올해/전체/기간 설정. 기간 설정 시 date picker 팝업.</li>
+          <li>최근 기록 3건 + "전체 보기" → M2(전체 기록) 화면으로.</li>
+          <li>GNB: 업로드/칭호/프로필 3개.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>풀스크린 스테이지 + 오버레이 (시안 C) — 게임감 강하지만 정보 접근성 낮음.</li>
+          <li>바텀 드로어 (시안 E) — 모바일에서는 좋지만 웹에서 어색.</li>
+          <li>스탯 기간을 탭 방식 — 드롭다운이 공간 절약.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>기간 설정 date picker UI — 캘린더? 시작일-종료일 입력?</li>
+          <li>스테이지 배경 — 레벨/진화 단계에 따라 변하는지.</li>
+          <li>캐릭터 클릭 시 인터랙션 (터치 반응, 대사 등).</li>
+          <li>모바일에서 스테이지/패널 스택 시 스테이지 높이.</li>
+          <li>알 상태 미세 모션 디테일 — CSS만? Lottie?</li>
+          <li>EXP 획득 내역 보기 진입점.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

@@ -39,7 +39,7 @@ docs/screens/
 | U | 업로드 (Upload) |
 | E | 진화 (Evolution) |
 | P | 프로필 (Profile) |
-| B | 훈장·칭호 (Badge/Title) |
+| B | 칭호 (Badge/Title) |
 
 ## 작성 규칙
 
@@ -54,8 +54,12 @@ docs/screens/
 - 모바일 default, 768px+ 태블릿, 1024px+ 데스크탑. 2단계 분기.
 - 고정 모바일 너비 와이어 금지 — 처음부터 반응형으로 (`feedback_wireframe_responsive` 메모리 규칙).
 
-### 카피
-- **실제 한국어 카피만** 사용. lorem ipsum 금지.
+### 카피 / UX 톤
+- **멘트 최소화** — 설명하려 하지 말 것. 직관적 UI로 전달. 텍스트는 라벨·수치 중심.
+- 서술형 문장 금지: "~하고 있어요", "~해 주세요", "당신만의 ~" 같은 과잉 친절체 쓰지 않음.
+- 필요한 텍스트는 **짧고 건조하게**. 2~3단어 이내. (예: "생성 중..." / "선택" / "완료")
+- 감탄사·이모지·느낌표 금지.
+- lorem ipsum 금지 — 실제 한국어 라벨만 사용.
 - **"운명" / "사주" 단어 금지** (Runmagotchi 사주 비공개 원칙).
 - 사주 내부 필드(일주·오행·temperament 등) 노출 금지.
 - DNA 카드 공개 필드(name·archetype·fantasy_modifier·signature_marks·color_palette·lore_one_liner)만 노출 허용.

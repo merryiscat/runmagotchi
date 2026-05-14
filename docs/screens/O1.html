@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>O1 · 시작 / 컨셉 소개 — Runmagotchi</title>
+<title>O1 · 랜딩 (영상 + 소셜 로그인) — Runmagotchi</title>
 <link rel="stylesheet" href="wireframe.css" />
 </head>
 <body>
@@ -13,34 +13,78 @@
   <main class="page__main">
 
     <div class="meta">
-      <div class="meta__title">O1 · 시작 / 컨셉 소개 <small>· 작성 2026-05-14</small></div>
+      <div class="meta__title">O1 · 랜딩 (영상 → 소셜 로그인) <small>· 작성 2026-05-15</small></div>
       <dl>
-        <dt>목적</dt><dd>첫 진입에서 컨셉을 1초 안에 전달하고 시작 CTA 노출</dd>
-        <dt>진입점</dt><dd>앱 설치 후 첫 실행 · PWA 첫 방문 · 로그아웃 상태에서 루트 진입</dd>
-        <dt>다음</dt><dd>[시작하기] → <a href="O2.html">O2 소셜 로그인 선택</a></dd>
+        <dt>목적</dt><dd>애니메이션 영상으로 컨셉 전달 후, 페이드 전환으로 소셜 로그인 유도</dd>
+        <dt>진입점</dt><dd>앱 첫 실행 · PWA 첫 방문 · 로그아웃 상태에서 루트 진입</dd>
+        <dt>다음</dt><dd>[소셜 로그인 완료] → <a href="O2.html">O2 알 생성</a></dd>
         <dt>권한</dt><dd>비로그인. 어떤 권한도 요청하지 않음</dd>
+        <dt>상태 2개</dt><dd>① 영상 재생 중 (풀스크린) → ② 페이드아웃 후 로그인 폼 노출</dd>
       </dl>
     </div>
 
-    <div class="frame frame--app">
-      <div class="frame__body">
+    <!-- ===== 상태 ① 영상 재생 중 (풀스크린) ===== -->
 
-        <div class="text-center text-sm text-muted mb-5">Runmagotchi</div>
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2);">상태 ① — 영상 재생 중</div>
 
-        <div class="text-center mb-5">
-          <div class="img-ph img-ph--char" style="margin: 0 auto;">캐릭터</div>
-        </div>
+    <div class="hero">
+      <div class="hero__video-ph">
+        <span style="font-size: var(--fs-2xl);">▶</span>
+        <span>애니메이션 영상</span>
+        <span style="font-size: var(--fs-sm);">달리는 사람의 다리 + 캐릭터가 함께 성장</span>
+        <span style="font-size: var(--fs-xs);">영상 끝나면 자동 페이드아웃 → 상태 ②</span>
+      </div>
 
-        <div class="text-center stack stack--sm mb-5">
-          <div class="text-2xl fw-bold">달리면 자라는<br />나의 캐릭터</div>
-          <div class="text-sm text-muted" style="margin-top: var(--s-3);">
-            런닝 기록을 올리면 캐릭터가 함께 자라요.<br />
-            매일의 한 걸음이 나만의 동반자를 만듭니다.
+      <!-- 영상 위 오버레이 — 상단 로고 + 하단 스킵 -->
+      <div class="hero__content" style="position: absolute; top: var(--s-5); left: 50%; transform: translateX(-50%);">
+        <div class="text-sm" style="color: var(--c-2);">Runmagotchi</div>
+      </div>
+
+      <div style="position: absolute; bottom: var(--s-5); left: 50%; transform: translateX(-50%);">
+        <button class="btn text-sm" style="border-color: var(--c-3); color: var(--c-2);">건너뛰기</button>
+      </div>
+    </div>
+
+    <!-- ===== 전환 어노테이션 ===== -->
+
+    <div class="annotation--arrow" style="padding: var(--s-5);">
+      <div class="text-sm text-muted">영상 종료 or 건너뛰기 → 페이드 전환 (0.8s)</div>
+    </div>
+
+    <!-- ===== 상태 ② 소셜 로그인 ===== -->
+
+    <div class="text-sm fw-bold mb-3" style="color: var(--c-2);">상태 ② — 소셜 로그인</div>
+
+    <div class="frame frame--web" style="min-height: 100vh;">
+      <div class="frame__body" style="align-items: center; justify-content: center;">
+
+        <div style="max-width: 420px; width: 100%; text-align: center;">
+
+          <!-- 로고 -->
+          <div class="logo-ph" style="margin-bottom: var(--s-7);">
+            <div style="font-size: 40px; font-weight: 900; letter-spacing: -1px; line-height: 1;">Runmagotchi</div>
+            <div style="font-size: var(--fs-xs); color: var(--c-3); margin-top: var(--s-2); letter-spacing: 2px;">LOGO PLACEHOLDER</div>
           </div>
-        </div>
 
-        <div class="mt-auto">
-          <a class="btn btn--primary btn--full btn--lg" href="O2.html">시작하기</a>
+          <div class="stack" style="gap: var(--s-3);">
+            <button class="btn--social">
+              <span class="icon-ph">G</span>
+              Google로 시작하기
+            </button>
+            <button class="btn--social">
+              <span class="icon-ph">K</span>
+              카카오로 시작하기
+            </button>
+            <button class="btn--social">
+              <span class="icon-ph">N</span>
+              네이버로 시작하기
+            </button>
+          </div>
+
+          <div class="text-xs text-muted" style="margin-top: var(--s-5); line-height: 1.6;">
+            시작하면 <a href="#">이용약관</a> 및 <a href="#">개인정보 처리방침</a>에 동의하게 됩니다.
+          </div>
+
         </div>
 
       </div>
@@ -55,30 +99,35 @@
       <section>
         <h3>의도</h3>
         <ul>
-          <li>첫 진입에서 "런닝 → 캐릭터 성장"이라는 컨셉을 한 문장으로 즉시 전달.</li>
-          <li>"운명 / 사주" 단어 미사용 — 사주는 100% 내부 시드, 가입 이후에도 사용자에게 노출하지 않는다는 원칙.</li>
-          <li>CTA 단일화. 소셜 로그인 종류 선택은 다음 화면(O2)으로 분리해 첫 화면 인지 부담을 낮춤.</li>
-          <li>캐릭터 일러스트는 와이어 단계에서 placeholder. 실제 단계에서는 ART_STYLE_GUIDE 기반 알/일러스트 사용.</li>
+          <li>풀스크린 애니메이션으로 "달리기 → 캐릭터 성장" 컨셉을 감성적으로 전달. 텍스트 설명보다 영상이 효과적.</li>
+          <li>영상 끝나면 자동 페이드아웃으로 소셜 로그인 노출 — 별도 화면 전환 없이 자연스러운 흐름.</li>
+          <li>로그인 화면은 로고 + 버튼만. 카피·캐릭터 이미지 제거 — 영상이 컨셉 전달을 담당하므로 로그인은 미니멀하게.</li>
+          <li>"건너뛰기" 버튼으로 재방문 사용자의 불편 방지.</li>
+          <li>소셜 로그인 3종(Google/Kakao/Naver) — Apple 제외(생년월일 제공 불가).</li>
+          <li>로고는 별도 제작 예정. 현재 텍스트 placeholder.</li>
         </ul>
       </section>
 
       <section>
         <h3>대안</h3>
         <ul>
-          <li>다단계 캐러셀(스와이프 3장)로 컨셉 소개 — 첫 진입 이탈률·전환 지연 우려로 단일 화면 선택.</li>
-          <li>로그인 버튼 3종을 첫 화면에 바로 노출 — 첫 화면 정보량 과다로 보류.</li>
-          <li>캐릭터 대신 런닝 일러스트 — 핵심이 "캐릭터 성장"이라 캐릭터 우선.</li>
+          <li>영상 없이 정적 일러스트 + 카피 — 컨셉 전달력 약하지만 로딩 빠름. 영상 제작 실패 시 fallback.</li>
+          <li>영상 자동 재생 대신 재생 버튼 클릭 방식 — 사용자 의지 개입이지만 전환율 하락 우려.</li>
+          <li>영상 종료 후 별도 화면으로 전환(라우팅) — 페이드 전환이 더 몰입감 있어서 보류.</li>
+          <li>소셜 로그인을 영상 위에 오버레이 — 영상 집중 방해 우려로 분리.</li>
         </ul>
       </section>
 
       <section>
         <h3>미정</h3>
         <ul>
-          <li>캐릭터 일러스트 톤 — 실루엣 한 컷 vs 디테일 있는 알 일러스트.</li>
-          <li>메인 카피 워딩 — "달리면 자라는 나의 캐릭터" 외 대안 풀 필요.</li>
-          <li>로고 위치·크기 — 상단 작게 vs 중앙 큼직하게.</li>
-          <li>"이미 계정 있어요" 별도 진입선 필요한지 — 소셜 로그인이 가입·로그인 겸용이라 일단 미포함.</li>
-          <li>PWA 설치 안내 배너 위치 (이 화면 vs 메인 진입 후).</li>
+          <li>영상 길이 — 5초? 10초? 15초? 너무 길면 이탈, 너무 짧으면 전달 부족.</li>
+          <li>영상 반복 재생 여부 — 1회 후 자동 전환 vs 루프 재생 + 수동 CTA.</li>
+          <li>재방문 시 영상 스킵 — 쿠키/로컬스토리지로 자동 스킵할지, 매번 보여줄지.</li>
+          <li>영상 로딩 실패 시 — 정적 이미지 fallback? 바로 로그인 화면?</li>
+          <li>캐릭터 placeholder 이미지 — 영상 마지막 프레임의 캐릭터와 일치시킬지.</li>
+          <li>모바일에서 영상 자동 재생 제한 (iOS Safari muted 필수) 대응.</li>
+          <li>약관·개인정보 처리방침 링크 연결 대상 (아직 문서 미작성).</li>
         </ul>
       </section>
     </div>

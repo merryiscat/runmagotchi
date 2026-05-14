@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O2 · 알 선택 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .egg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .egg-card {
+    border: 2px solid var(--c-4);
+    padding: var(--s-5);
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .egg-card:hover { border-color: var(--c-1); }
+  .egg-card--selected { border-color: var(--c-0); border-width: 3px; }
+
+  .egg-card__img {
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+    border: 1px solid var(--c-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--c-3);
+    font-size: var(--fs-sm);
+    background:
+      linear-gradient(to bottom right, transparent calc(50% - 1px), var(--c-4) 50%, transparent calc(50% + 1px)),
+      linear-gradient(to bottom left, transparent calc(50% - 1px), var(--c-4) 50%, transparent calc(50% + 1px));
+    background-color: var(--c-6);
+    border-radius: 12px;
+  }
+
+  @media (max-width: 767px) {
+    .egg-grid {
+      grid-template-columns: 1fr;
+      max-width: 240px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">O2 · 알 선택 <small>· 작성 2026-05-15</small></div>
+      <dl>
+        <dt>목적</dt><dd>첫 가입 시 알 3개 중 1개 선택. 정보 없이 직감으로 고름</dd>
+        <dt>진입점</dt><dd>O1 소셜 로그인 완료 직후</dd>
+        <dt>다음</dt><dd>[선택] → <a href="M1.html">M1 메인</a> (알 상태로 진입, 누적 10km 시 부화)</dd>
+        <dt>권한</dt><dd>로그인 필수</dd>
+      </dl>
+    </div>
+
+    <div class="frame frame--web" style="min-height: 70vh;">
+      <div class="frame__body" style="align-items: center; justify-content: center;">
+
+        <div style="width: 100%;">
+
+          <div class="egg-grid" style="margin-bottom: var(--s-7);">
+            <div class="egg-card">
+              <div class="egg-card__img">알</div>
+              <div style="margin-top: var(--s-2); display: flex; justify-content: center;">
+                <div style="width: 20px; height: 20px; border: 1px solid var(--c-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--c-3);">C1</div>
+              </div>
+            </div>
+            <div class="egg-card egg-card--selected">
+              <div class="egg-card__img">알</div>
+              <div style="margin-top: var(--s-2); display: flex; justify-content: center;">
+                <div style="width: 20px; height: 20px; border: 1px solid var(--c-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--c-3);">C2</div>
+              </div>
+            </div>
+            <div class="egg-card">
+              <div class="egg-card__img">알</div>
+              <div style="margin-top: var(--s-2); display: flex; justify-content: center;">
+                <div style="width: 20px; height: 20px; border: 1px solid var(--c-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--c-3);">C3</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center;">
+            <button class="btn btn--primary btn--lg" style="min-width: 200px;">선택</button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">O2 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>알 3개는 형태 동일, 색상만 다름. 사주 기반으로 추천된 3가지 색상이 각 알에 적용.</li>
+          <li>이름·타입·상세 정보 일절 없음. 색상만 보고 직감으로 선택 — 기대감·궁금증 유발.</li>
+          <li>선택한 색상이 캐릭터의 color_palette 기본 색이 된다.</li>
+          <li>이름은 부화 후 사용자가 직접 짓는다.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>색상+형태 모두 다르게 — 형태 통일이 선택 부담 줄이고 색감 집중 유도.</li>
+          <li>알 1개 자동 확정 — 선택권이 있어야 애착.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>사주→색상 매핑 룰 — 오행 기반? 일주 기반? 3색 추출 로직 설계 필요.</li>
+          <li>선택 확정 전 되돌리기 가능 여부.</li>
+          <li>선택 시 알이 살짝 반응하는 마이크로 인터랙션.</li>
+          <li>모바일에서 세로 스택 vs 가로 스크롤.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

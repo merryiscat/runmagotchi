@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M1 시안 비교 (스테이지) — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  body { background: var(--c-5); }
+
+  .variants {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--s-5);
+  }
+  .variants h1 { font-size: var(--fs-2xl); margin-bottom: var(--s-2); }
+  .variants > p { font-size: var(--fs-sm); color: var(--c-2); margin-bottom: var(--s-7); }
+
+  .variant {
+    margin-bottom: var(--s-7);
+    background: var(--c-6);
+    border: 1px solid var(--c-3);
+  }
+  .variant__header {
+    padding: var(--s-4) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .variant__header h2 { font-size: var(--fs-lg); margin-bottom: var(--s-1); }
+  .variant__header p { font-size: var(--fs-sm); color: var(--c-2); }
+  .variant__body { background: var(--c-6); }
+
+  /* 공통 */
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+
+  .exp-track { height: 6px; background: var(--c-5); width: 100%; }
+  .exp-fill { height: 6px; background: var(--c-1); }
+
+  .stats-row { display: flex; gap: var(--s-4); text-align: center; }
+  .stats-row > div { flex: 1; }
+  .stat-v { font-size: var(--fs-xl); font-weight: 700; }
+  .stat-l { font-size: var(--fs-xs); color: var(--c-2); }
+
+  .run-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--s-3) 0; border-bottom: 1px solid var(--c-5); font-size: var(--fs-sm);
+  }
+  .run-row:last-child { border-bottom: none; }
+
+  /* 스테이지 공통 */
+  .stage {
+    position: relative;
+    border: 1px solid var(--c-3);
+    background: var(--c-5);
+    overflow: hidden;
+  }
+
+  .stage__char {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 1px dashed var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+
+  /* 캐릭터 이동 경로 표시 (점선) */
+  .stage__path {
+    position: absolute;
+    border-top: 1px dashed var(--c-4);
+    transform-origin: left center;
+  }
+
+  .stage__label {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--c-3);
+  }
+
+  /* ===== 시안 A: 풀와이드 스테이지 상단 ===== */
+  .va-stage { width: 100%; height: 360px; }
+  @media (min-width: 768px) { .va-stage { height: 420px; } }
+
+  .va-info-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-3) var(--s-5);
+    background: var(--c-6);
+    border-top: 1px solid var(--c-4);
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+  }
+
+  .va-below {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-5);
+    padding: var(--s-5);
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  @media (min-width: 768px) { .va-below { grid-template-columns: 1fr 1fr; } }
+
+  /* ===== 시안 B: 5:5 분할 좌 스테이지 ===== */
+  .vb-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) { .vb-layout { grid-template-columns: 1fr 1fr; } }
+
+  .vb-stage { width: 100%; height: 400px; }
+  @media (min-width: 768px) { .vb-stage { height: auto; min-height: 560px; } }
+
+  .vb-panel {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--c-4);
+  }
+  .vb-section {
+    padding: var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .vb-section:last-child { border-bottom: none; }
+
+  /* ===== 시안 C: 스테이지 배경 + 오버레이 ===== */
+  .vc-stage { width: 100%; height: 100vh; max-height: 700px; position: relative; }
+
+  .vc-overlay-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-4) var(--s-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 2;
+  }
+
+  .vc-overlay-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-5);
+    background: linear-gradient(transparent, var(--c-6) 40%);
+    z-index: 2;
+    padding-top: 80px;
+  }
+  /* 흑백 규칙상 gradient 대신 solid로 */
+  .vc-overlay-bottom { background: var(--c-6); border-top: 1px solid var(--c-4); padding-top: var(--s-5); }
+
+  .vc-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-4);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  @media (min-width: 768px) { .vc-bottom-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* ===== 시안 D: 스테이지 중앙 + 양옆 패널 ===== */
+  .vd-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1024px) {
+    .vd-layout { grid-template-columns: 240px 1fr 300px; }
+  }
+
+  .vd-left {
+    padding: var(--s-5);
+    border-right: 1px solid var(--c-4);
+    display: none;
+  }
+  @media (min-width: 1024px) { .vd-left { display: block; } }
+
+  .vd-stage { width: 100%; height: 400px; }
+  @media (min-width: 1024px) { .vd-stage { height: auto; min-height: 560px; } }
+
+  .vd-right {
+    padding: var(--s-5);
+    border-left: 1px solid var(--c-4);
+  }
+
+  /* ===== 시안 E: 스테이지 풀스크린 + 하단 드로어 ===== */
+  .ve-stage { width: 100%; height: 70vh; min-height: 400px; }
+
+  .ve-drawer {
+    border-top: 2px solid var(--c-1);
+    padding: var(--s-4) var(--s-5);
+  }
+
+  .ve-drawer__handle {
+    width: 40px;
+    height: 4px;
+    background: var(--c-3);
+    border-radius: 2px;
+    margin: 0 auto var(--s-4);
+  }
+
+  .ve-drawer__content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-5);
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  @media (min-width: 768px) {
+    .ve-drawer__content { grid-template-columns: 1fr 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="variants">
+
+<h1>M1 메인 대시보드 — 스테이지 시안</h1>
+<p>캐릭터가 자유롭게 돌아다니는 스테이지 영역 중심. 5가지 레이아웃.</p>
+
+<!-- ==================== 시안 A ==================== -->
+<div class="variant">
+  <div class="variant__header">
+    <h2>A — 풀와이드 스테이지 + 하단 정보</h2>
+    <p>상단 전체가 스테이지. 하단 바에 레벨/EXP. 그 아래 스탯·기록 그리드.</p>
+  </div>
+  <div class="variant__body">
+    <div class="gnb">
+      <div class="gnb__logo">Runmagotchi</div>
+      <div class="gnb__nav"><a href="#">업로드</a><a href="#">훈장</a><a href="#">프로필</a></div>
+    </div>
+    <div class="stage va-stage">
+      <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 캐릭터 자유 이동 영역</div>
+      <div class="stage__char" style="top: 120px; left: 30%;">캐릭터</div>
+      <div class="stage__char" style="top: 180px; left: 55%; opacity: 0.3; border-style: dotted;">이동중</div>
+      <!-- 하단 정보 바 -->
+      <div class="va-info-bar">
+        <div class="fw-bold">{캐릭터 이름}</div>
+        <div class="text-xs text-muted">{archetype} · {fantasy_modifier}</div>
+        <div style="flex: 1; max-width: 200px;">
+          <div class="row row--between mb-1"><span class="text-xs fw-bold">Lv.{레벨}</span><span class="text-xs text-muted">{EXP}/{다음}</span></div>
+          <div class="exp-track"><div class="exp-fill" style="width: 65%;"></div></div>
+        </div>
+        <a class="btn btn--primary" href="#">업로드</a>
+      </div>
+    </div>
+    <div class="va-below">
+      <div>
+        <div class="stats-row mb-4">
+          <div><div class="stat-v">{총거리}</div><div class="stat-l">km</div></div>
+          <div><div class="stat-v">{횟수}</div><div class="stat-l">회</div></div>
+          <div><div class="stat-v">{연속}</div><div class="stat-l">일 연속</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="text-sm fw-bold mb-3">최근 기록</div>
+        <div class="run-row"><div><strong>5.2 km</strong> <span class="text-xs text-muted">05:32 /km</span></div><span class="text-xs text-muted">오늘</span></div>
+        <div class="run-row"><div><strong>3.8 km</strong> <span class="text-xs text-muted">05:48 /km</span></div><span class="text-xs text-muted">어제</span></div>
+        <div class="run-row"><div><strong>10.1 km</strong> <span class="text-xs text-muted">05:15 /km</span></div><span class="text-xs text-muted">3일 전</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 시안 B ==================== -->
+<div class="variant">
+  <div class="variant__header">
+    <h2>B — 좌 스테이지 / 우 패널</h2>
+    <p>좌측 절반이 스테이지. 우측에 정보 패널 섹션 분할. 캐릭터 항상 보임.</p>
+  </div>
+  <div class="variant__body">
+    <div class="gnb">
+      <div class="gnb__logo">Runmagotchi</div>
+      <div class="gnb__nav"><a href="#">업로드</a><a href="#">훈장</a><a href="#">프로필</a></div>
+    </div>
+    <div class="vb-layout">
+      <div class="stage vb-stage" style="border: none; border-right: 1px solid var(--c-3);">
+        <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지</div>
+        <div class="stage__char" style="top: 40%; left: 35%;">캐릭터</div>
+        <!-- 스테이지 하단에 이름/레벨 -->
+        <div style="position: absolute; bottom: var(--s-4); left: var(--s-4); right: var(--s-4); text-align: center;">
+          <div class="fw-bold text-sm">{캐릭터 이름}</div>
+          <div style="max-width: 200px; margin: var(--s-2) auto 0;">
+            <div class="row row--between mb-1"><span class="text-xs fw-bold">Lv.{레벨}</span><span class="text-xs text-muted">{EXP}/{다음}</span></div>
+            <div class="exp-track"><div class="exp-fill" style="width: 65%;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="vb-panel">
+        <div class="vb-section">
+          <div class="stats-row">
+            <div><div class="stat-v">{총거리}</div><div class="stat-l">km</div></div>
+            <div><div class="stat-v">{횟수}</div><div class="stat-l">회</div></div>
+            <div><div class="stat-v">{연속}</div><div class="stat-l">일 연속</div></div>
+          </div>
+        </div>
+        <div class="vb-section">
+          <a class="btn btn--primary btn--full btn--lg" href="#">업로드</a>
+        </div>
+        <div class="vb-section" style="flex: 1;">
+          <div class="text-sm fw-bold mb-3">최근 기록</div>
+          <div class="run-row"><div><strong>5.2 km</strong> <span class="text-xs text-muted">05:32 /km</span></div><span class="text-xs text-muted">오늘</span></div>
+          <div class="run-row"><div><strong>3.8 km</strong> <span class="text-xs text-muted">05:48 /km</span></div><span class="text-xs text-muted">어제</span></div>
+          <div class="run-row"><div><strong>10.1 km</strong> <span class="text-xs text-muted">05:15 /km</span></div><span class="text-xs text-muted">3일 전</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 시안 C ==================== -->
+<div class="variant">
+  <div class="variant__header">
+    <h2>C — 풀스크린 스테이지 + 오버레이 UI</h2>
+    <p>스테이지가 전체 배경. UI는 상단/하단에 오버레이로. 게임 HUD 느낌.</p>
+  </div>
+  <div class="variant__body">
+    <div class="stage vc-stage" style="border: none;">
+      <div class="stage__label" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">풀스크린 스테이지</div>
+      <div class="stage__char" style="top: 45%; left: 40%;">캐릭터</div>
+
+      <!-- 상단 HUD -->
+      <div class="vc-overlay-top">
+        <div>
+          <div class="fw-bold" style="background: var(--c-6); padding: var(--s-1) var(--s-3); display: inline-block;">Runmagotchi</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="background: var(--c-6); padding: var(--s-2) var(--s-3); display: inline-block;">
+            <div class="text-sm fw-bold">{캐릭터 이름}</div>
+            <div style="width: 120px;">
+              <div class="row row--between"><span class="text-xs fw-bold">Lv.{레벨}</span><span class="text-xs text-muted">{EXP}/{다음}</span></div>
+              <div class="exp-track"><div class="exp-fill" style="width: 65%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 오버레이 -->
+      <div class="vc-overlay-bottom">
+        <div class="vc-bottom-grid">
+          <div>
+            <div class="stats-row">
+              <div><div class="stat-v">{총거리}</div><div class="stat-l">km</div></div>
+              <div><div class="stat-v">{횟수}</div><div class="stat-l">회</div></div>
+              <div><div class="stat-v">{연속}</div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="row" style="gap: var(--s-3);">
+              <a class="btn btn--primary" href="#" style="flex: 1; text-align: center;">업로드</a>
+              <a class="btn" href="#" style="flex: 0;">훈장</a>
+              <a class="btn" href="#" style="flex: 0;">프로필</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 시안 D ==================== -->
+<div class="variant">
+  <div class="variant__header">
+    <h2>D — 3단 (좌 네비 / 중앙 스테이지 / 우 정보)</h2>
+    <p>중앙에 스테이지 넓게. 양쪽에 네비와 정보. 데스크탑 최적화.</p>
+  </div>
+  <div class="variant__body">
+    <div class="vd-layout">
+      <div class="vd-left">
+        <div class="fw-bold mb-5" style="font-size: var(--fs-lg);">Runmagotchi</div>
+        <div style="display: flex; flex-direction: column; gap: var(--s-3);">
+          <a class="btn btn--primary btn--full" href="#">업로드</a>
+          <a class="btn btn--full" href="#">훈장</a>
+          <a class="btn btn--full" href="#">프로필</a>
+        </div>
+      </div>
+      <div class="stage vd-stage" style="border-left: none; border-right: none;">
+        <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지</div>
+        <div class="stage__char" style="top: 40%; left: 40%;">캐릭터</div>
+        <div style="position: absolute; bottom: var(--s-4); left: 50%; transform: translateX(-50%); text-align: center;">
+          <div class="fw-bold text-sm">{캐릭터 이름}</div>
+          <div style="width: 180px; margin-top: var(--s-2);">
+            <div class="row row--between"><span class="text-xs fw-bold">Lv.{레벨}</span><span class="text-xs text-muted">{EXP}/{다음}</span></div>
+            <div class="exp-track"><div class="exp-fill" style="width: 65%;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="vd-right">
+        <div class="stats-row mb-5">
+          <div><div class="stat-v">{총거리}</div><div class="stat-l">km</div></div>
+          <div><div class="stat-v">{횟수}</div><div class="stat-l">회</div></div>
+          <div><div class="stat-v">{연속}</div><div class="stat-l">일 연속</div></div>
+        </div>
+        <div class="text-sm fw-bold mb-3">최근 기록</div>
+        <div class="run-row"><div><strong>5.2 km</strong> <span class="text-xs text-muted">05:32 /km</span></div><span class="text-xs text-muted">오늘</span></div>
+        <div class="run-row"><div><strong>3.8 km</strong> <span class="text-xs text-muted">05:48 /km</span></div><span class="text-xs text-muted">어제</span></div>
+        <div class="run-row"><div><strong>10.1 km</strong> <span class="text-xs text-muted">05:15 /km</span></div><span class="text-xs text-muted">3일 전</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 시안 E ==================== -->
+<div class="variant">
+  <div class="variant__header">
+    <h2>E — 풀 스테이지 + 바텀 드로어</h2>
+    <p>스테이지가 화면 대부분. 하단에 드로어(끌어올리면 펼쳐짐)로 정보 접근. 모바일 게임 UX.</p>
+  </div>
+  <div class="variant__body">
+    <div class="gnb">
+      <div class="gnb__logo">Runmagotchi</div>
+      <div class="gnb__nav"><a href="#">업로드</a><a href="#">훈장</a><a href="#">프로필</a></div>
+    </div>
+    <div class="stage ve-stage">
+      <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지</div>
+      <div class="stage__char" style="top: 35%; left: 45%;">캐릭터</div>
+      <!-- 스테이지 내 레벨 표시 -->
+      <div style="position: absolute; top: var(--s-3); right: var(--s-4); background: var(--c-6); padding: var(--s-2) var(--s-3);">
+        <div class="text-xs fw-bold">{캐릭터 이름} · Lv.{레벨}</div>
+        <div style="width: 120px; margin-top: var(--s-1);">
+          <div class="exp-track"><div class="exp-fill" style="width: 65%;"></div></div>
+        </div>
+      </div>
+      <!-- 업로드 FAB -->
+      <div style="position: absolute; bottom: var(--s-7); right: var(--s-5);">
+        <a class="btn btn--primary" href="#" style="width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); padding: 0;">+</a>
+      </div>
+    </div>
+    <!-- 드로어 (접힌 상태) -->
+    <div class="ve-drawer">
+      <div class="ve-drawer__handle"></div>
+      <div class="ve-drawer__content">
+        <div>
+          <div class="stats-row">
+            <div><div class="stat-v">{총거리}</div><div class="stat-l">km</div></div>
+            <div><div class="stat-v">{횟수}</div><div class="stat-l">회</div></div>
+            <div><div class="stat-v">{연속}</div><div class="stat-l">일 연속</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="text-sm fw-bold mb-3">최근 기록</div>
+          <div class="run-row"><div><strong>5.2 km</strong> <span class="text-xs text-muted">05:32 /km</span></div><span class="text-xs text-muted">오늘</span></div>
+          <div class="run-row"><div><strong>3.8 km</strong> <span class="text-xs text-muted">05:48 /km</span></div><span class="text-xs text-muted">어제</span></div>
+        </div>
+        <div>
+          <a class="btn btn--primary btn--full btn--lg" href="#">업로드</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
