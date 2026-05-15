@@ -121,41 +121,11 @@
       <dl>
         <dt>목적</dt><dd>로그인 후 기본 화면. 좌 스테이지(캐릭터 자유 이동) + 우 패널(스탯·업로드·기록)</dd>
         <dt>진입점</dt><dd>O2 알 선택 완료 · 로그인 후 기본 · 네비</dd>
-        <dt>다음</dt><dd>업로드 → <a href="U1.html">U1</a> · 칭호 → <a href="B1.html">B1</a> · 프로필 → <a href="P1.html">P1</a> · 전체 기록 → <a href="M2.html">M2</a></dd>
+        <dt>다음</dt><dd>업로드 → <a href="U1.html">U1</a> · 칭호 → <a href="B1.html">B1</a> · 프로필 → <a href="P1.html">P1</a> · 전체 기록 → <a href="M2.html">M2</a> · 누적 10km / Lv 만점 충족 시 stage 위 자동 → <a href="E1.html">E1 부화·진화 연출</a></dd>
         <dt>권한</dt><dd>로그인 필수</dd>
-        <dt>상태</dt><dd>A = 알 (부화 전) · B = 캐릭터 (부화 후)</dd>
+        <dt>단계</dt><dd>캐릭터가 알 → 유아 → 유년 → 초기체 → 중기체 → 완전체로 진화. stage 외형만 변함, 레이아웃은 동일</dd>
       </dl>
     </div>
-
-    <!-- ===== 상태 A: 알 ===== -->
-
-    <div class="text-sm fw-bold mb-3" style="color: var(--c-2);">상태 A — 알 (부화 전)</div>
-
-    <div class="frame frame--web" style="min-height: auto;">
-      <div class="gnb">
-        <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
-      </div>
-      <div class="m1-layout">
-        <!-- 스테이지: 알 고정 + 미세 모션 -->
-        <div class="stage">
-          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 알 고정, 미세 모션 (흔들림/꿈틀)</div>
-          <div class="stage__char" style="top: 42%; left: 42%;">알</div>
-        </div>
-        <!-- 패널: 업로드 유도 -->
-        <div class="panel">
-          <div class="panel__section" style="flex: 1; display: flex; align-items: center; justify-content: center;">
-            <div style="text-align: center;">
-              <a class="btn btn--primary btn--lg" href="U1.html" style="min-width: 180px;">업로드</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== 상태 B: 캐릭터 ===== -->
-
-    <div class="text-sm fw-bold mb-3" style="color: var(--c-2); margin-top: var(--s-7);">상태 B — 캐릭터 (부화 후)</div>
 
     <div class="frame frame--web" style="min-height: auto;">
       <div class="gnb">
@@ -165,11 +135,11 @@
       <div class="m1-layout">
         <!-- 좌: 스테이지 -->
         <div class="stage">
-          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 캐릭터 자유 이동</div>
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 캐릭터 자유 이동 (현재 단계 외형)</div>
           <div class="stage__char" style="top: 40%; left: 35%;">캐릭터</div>
           <div class="stage__footer">
-            <div class="fw-bold text-sm">{캐릭터 이름}</div>
-            <div class="text-xs text-muted" style="margin-top: var(--s-1);">Lv.<span class="token">{레벨}</span></div>
+            <div class="fw-bold text-sm"><span class="token">{캐릭터 이름}</span></div>
+            <div class="text-xs text-muted" style="margin-top: var(--s-1);">Lv.<span class="token">{레벨}</span> · <span class="token">{단계}</span></div>
           </div>
         </div>
 
@@ -244,8 +214,10 @@
         <h3>의도</h3>
         <ul>
           <li>시안 B 채택: 좌 스테이지 / 우 패널. 캐릭터가 항상 시야에.</li>
-          <li>스테이지: 알은 고정+미세 모션(흔들림/꿈틀), 캐릭터는 자유 이동 (Sprite+JS).</li>
-          <li>부화 조건: 누적 10km 달성. 진행도 비공개 — 어느 순간 깨어나는 서프라이즈. 달성 시 알 깨지는 연출 → 캐릭터 등장 + 이름 짓기.</li>
+          <li>알·캐릭터 상태 구분 없음 — M1은 단일 레이아웃. 알은 캐릭터의 1단계(시작 단계)로 통합 표현. stage에 현재 단계 외형만 바뀌어 표시된다.</li>
+          <li>스테이지: 캐릭터가 자유 이동 (Sprite+JS). 단계 외형만 진화 시 변함.</li>
+          <li>부화 조건: 누적 10km 달성. 진행도 비공개 — 어느 순간 깨어나는 서프라이즈. 달성 시 stage 위에서 알 깨지는 연출 → 캐릭터 등장 → 이름 짓기 팝업. panel(스탯·업로드·기록)은 그동안에도 활성 유지 — 부화가 사용자 동선을 막지 않는다.</li>
+          <li>stage 풋터: 이름·레벨·단계. 알 단계는 이름이 빈 토큰, 부화 후 채워짐.</li>
           <li>스탯 기간 드롭다운: 이번 달/지난 달/3개월/올해/전체/기간 설정. 기간 설정 시 date picker 팝업.</li>
           <li>최근 기록 3건 + "전체 보기" → M2(전체 기록) 화면으로.</li>
           <li>GNB: 업로드/칭호/프로필 3개.</li>
