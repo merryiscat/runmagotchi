@@ -211,7 +211,7 @@
     <div class="frame frame--web" style="min-height: auto;">
       <div class="gnb">
         <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
       </div>
       <div class="m1-layout">
         <div class="stage">
@@ -254,7 +254,7 @@
     <div class="frame frame--web" style="min-height: auto;">
       <div class="gnb">
         <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
       </div>
       <div class="m1-layout">
         <div class="stage">
@@ -262,7 +262,6 @@
           <div class="stage__char" style="top: 42%; left: 42%;">알 균열 3 (최종)</div>
           <div class="stage__footer">
             <div class="text-sm fw-bold">부화 중...</div>
-            <div class="text-xs text-muted" style="margin-top: var(--s-1);">최대 7초</div>
           </div>
         </div>
         <div class="panel">
@@ -300,7 +299,7 @@
     <div class="frame frame--web frame--popup-host" style="min-height: auto;">
       <div class="gnb">
         <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
       </div>
       <div class="m1-layout">
         <div class="stage">
@@ -339,6 +338,7 @@
       <div class="popup-backdrop">
         <div class="popup">
           <div class="popup__title">이름 짓기</div>
+          <div class="text-sm" style="text-align: center; padding: var(--s-2) 0; color: var(--c-2);"><span class="token">{성별}</span></div>
           <input class="input" type="text" maxlength="12" placeholder="2~12자" />
           <div class="text-xs text-muted">변경 불가 · 한글·영문·숫자</div>
           <button class="btn btn--primary btn--full">확정</button>
@@ -356,7 +356,7 @@
     <div class="frame frame--web" style="min-height: auto;">
       <div class="gnb">
         <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
       </div>
       <div class="m1-layout">
         <div class="stage">
@@ -365,7 +365,6 @@
           <div class="motion-hint"><span>빛 폭발 → 실루엣 변신 → 빛 잦아들며 새 단계 노출</span></div>
           <div class="stage__footer">
             <div class="text-sm fw-bold">진화 중...</div>
-            <div class="text-xs text-muted" style="margin-top: var(--s-1);">최대 7초</div>
           </div>
         </div>
         <div class="panel">
@@ -403,7 +402,7 @@
     <div class="frame frame--web" style="min-height: auto;">
       <div class="gnb">
         <div class="gnb__logo">Runmagotchi</div>
-        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="B1.html">칭호</a><a href="P1.html">프로필</a></div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
       </div>
       <div class="m1-layout">
         <div class="stage">
@@ -411,7 +410,7 @@
           <div class="stage__char" style="top: 40%; left: 35%;">캐릭터 (<span class="token">{다음 단계}</span>)</div>
           <div class="stage__footer">
             <div class="fw-bold text-sm"><span class="token">{캐릭터 이름}</span></div>
-            <div class="text-xs text-muted" style="margin-top: var(--s-1);">Lv.<span class="token">{레벨}</span> · <span class="token">{다음 단계}</span></div>
+            <div class="text-xs text-muted" style="margin-top: var(--s-1);"><span class="token">{성별}</span></div>
           </div>
         </div>
         <div class="panel">
@@ -454,11 +453,11 @@
         <ul>
           <li>모든 진화 시점 통합. M1 stage·panel 그대로 유지하고 stage 위에서만 연출 변화. panel은 부화·진화 중에도 활성 — 사용자 동선 막지 않음.</li>
           <li>부화 패턴: ① 알 균열 → ② 부화 중 → ③ 유아 등장 + 이름 짓기 (3단계). 진화 패턴: ① 빛 폭발 변신 → ② 새 단계 등장 (2단계). 진화는 시각 임팩트가 한 번에 일어나는 디지몬 진화 스타일이라 중간 분리 불필요.</li>
-          <li>모드 A 부화 (1회): 알 균열 → 균열 진행 → 유아 등장 + 이름 짓기 팝업. 팝업은 이름 입력만 — 부화 순간 시각 집중을 위해 다른 정보는 모두 제외. DNA 카드(archetype·fantasy_modifier·signature_marks·color_palette·lore_one_liner)는 P1 프로필 등 별도 화면에서 노출.</li>
+          <li>모드 A 부화 (1회): 알 균열 → 균열 진행 → 유아 등장 + 이름 짓기 팝업. 팝업은 성별 표시 + 이름 입력만 — 부화 순간 시각 집중을 위해 다른 정보는 모두 제외.</li>
           <li><b>알·균열 시퀀스 = 고정 이미지 + 사용자 color_palette 적용.</b> 모든 사용자에게 동일 형태, O2에서 선택한 색상만 다름. AI 이미지 생성은 ② 동안 백그라운드에서 유아 캐릭터 1장만 — 알 단계는 생성 비용 0.</li>
           <li>모드 B 일반 진화 (4회: 10/20/30/40 만점): 빛 폭발 + 실루엣 변신 (디지몬 진화 스타일 참조) → 새 단계 등장. 팝업 없음 — 이름·DNA는 이미 있고, stage__footer의 단계 토큰만 갱신.</li>
           <li>모드 B의 시각 모티프(디지몬식 빛 폭발 변신)는 부화의 균열과 다르지만 panel 정합은 같음.</li>
-          <li>DNA 카드는 <code>docs/screens/README.md</code>의 노출 가능 필드만. signature_marks는 일반 필드 톤 (이스터에그 비공개).</li>
+          <li>공개 필드는 이름·성별 2개뿐. 나머지(archetype·fantasy_modifier·signature_marks 등)는 내부 시드 — 화면 노출 금지.</li>
           <li>이탈·취소 차단. 중간 이탈 시 M1 재진입에서 다시 자동 발동.</li>
         </ul>
       </section>
@@ -482,7 +481,7 @@
           <li>빛 폭발 변신(모드 B) 모션 디테일 — CSS 키프레임 / Lottie / SVG 마스크. 디지몬 진화 참조 정도 (빛 폭발 강도·실루엣 깜빡임 횟수·색감).</li>
           <li>① → ② → ③ 전환 시각 길이.</li>
           <li>이미지 생성 실패 시 → E2 생성 실패 화면 전이 (예정) vs 인라인 재시도.</li>
-          <li>DNA 카드 첫 노출 시점·위치 — P1 프로필? 부화 직후 별도 안내? 사용자가 P1을 의식적으로 열기 전엔 모를 수도.</li>
+          <li>P1 프로필에 노출할 캐릭터 정보 범위 — 이름·성별 외 추가 공개 항목 있는지.</li>
           <li>7초 초과 시 — 백그라운드 전환 후 푸시 vs 계속 대기.</li>
           <li>모드 B에서 새 단계 등장 시 마이크로 임팩트(스크롤바·진동·사운드 등) 여부.</li>
           <li>이름 중복 검사 — 글로벌 / 본인 컬렉션 / 미검사.</li>

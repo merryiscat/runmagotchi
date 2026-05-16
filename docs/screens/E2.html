@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>E2 · 생성 실패 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .m1-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .m1-layout { grid-template-columns: 1fr 1fr; }
+  }
+
+  .stage {
+    position: relative;
+    background: var(--c-5);
+    border-right: 1px solid var(--c-4);
+    min-height: 400px;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .stage { min-height: 560px; }
+  }
+
+  .stage__char {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 1px dashed var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+
+  .stage__label {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--c-3);
+  }
+
+  .stage__center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .stage__icon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--c-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-lg);
+    color: var(--c-2);
+  }
+
+  .panel { display: flex; flex-direction: column; }
+
+  .panel__section {
+    padding: var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .panel__section:last-child { border-bottom: none; }
+
+  .stats-row { display: flex; gap: var(--s-4); text-align: center; }
+  .stats-row > div { flex: 1; }
+  .stat-v { font-size: var(--fs-xl); font-weight: 700; }
+  .stat-l { font-size: var(--fs-xs); color: var(--c-2); }
+
+  .period-select {
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--c-3);
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    background: var(--c-6);
+    color: var(--c-1);
+    cursor: pointer;
+  }
+
+  .run-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-5);
+    font-size: var(--fs-sm);
+  }
+  .run-row:last-child { border-bottom: none; }
+
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+
+  .mode-label {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--c-0);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px solid var(--c-3);
+    margin-bottom: var(--s-4);
+    margin-top: var(--s-7);
+  }
+  .mode-label:first-of-type { margin-top: 0; }
+
+  .state-label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-2);
+    margin-bottom: var(--s-3);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">E2 · 생성 실패 <small>· 작성 2026-05-15</small></div>
+      <dl>
+        <dt>목적</dt><dd>부화·진화 중 이미지 생성 실패 시 사용자 알림 + 수동 재시도</dd>
+        <dt>진입점</dt><dd><a href="E1.html">E1</a> 부화 중(A②) 또는 진화 중(B①)에서 이미지 생성 API 실패 시 전이</dd>
+        <dt>다음</dt><dd>재시도 성공 → <a href="E1.html">E1</a> 해당 단계 복귀 (부화: A③ 유아 등장 / 진화: B② 새 단계 등장)</dd>
+        <dt>권한</dt><dd>로그인 필수 · 부화 또는 진화 트리거 조건 충족 상태</dd>
+        <dt>모드</dt><dd>A 부화 실패 · B 진화 실패 — 카피만 다르고 구조 동일</dd>
+      </dl>
+    </div>
+
+    <!-- ===== 모드 A: 부화 실패 ===== -->
+
+    <div class="mode-label">모드 A — 부화 실패</div>
+
+    <div class="state-label">stage 중앙에 실패 안내 + 재시도 버튼</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 부화 실패 상태</div>
+          <div class="stage__center">
+            <div class="stage__icon">!</div>
+            <div class="text-sm fw-bold">부화 실패</div>
+            <div class="text-xs text-muted">다시 시도해 주세요</div>
+            <button class="btn btn--primary" style="margin-top: var(--s-2);">재시도</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 달</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted">05:32 /km · 28분</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 모드 B: 진화 실패 ===== -->
+
+    <div class="mode-label">모드 B — 진화 실패</div>
+
+    <div class="state-label">stage 중앙에 실패 안내 + 재시도 버튼 (카피만 다름)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 진화 실패 상태 (이전 단계 캐릭터 유지)</div>
+          <div class="stage__char" style="top: 40%; left: 20%;">캐릭터 (<span class="token">{현재 단계}</span>)</div>
+          <div class="stage__center" style="left: 60%;">
+            <div class="stage__icon">!</div>
+            <div class="text-sm fw-bold">진화 실패</div>
+            <div class="text-xs text-muted">다시 시도해 주세요</div>
+            <button class="btn btn--primary" style="margin-top: var(--s-2);">재시도</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 달</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted">05:32 /km · 28분</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">E2 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>M1 stage·panel 레이아웃 유지. stage 중앙에 실패 메시지 + 재시도 버튼만 배치. panel은 정상 작동 — 사용자 동선 차단 최소화.</li>
+          <li>모드 A(부화 실패): 알 상태 그대로. 유아 이미지 생성이 실패한 것이므로 알이 보이지 않고 실패 안내만 표시.</li>
+          <li>모드 B(진화 실패): 이전 단계 캐릭터가 stage에 그대로 남아있고, 옆에 실패 안내 + 재시도 표시. 캐릭터가 사라지지 않음 — 실패해도 기존 상태 유지.</li>
+          <li>재시도 버튼 누르면 E1의 대기 상태(부화 중... / 진화 중...)로 복귀. 성공 시 E1 완료 단계로 전이.</li>
+          <li>재시도 횟수 제한 없음. API 비용은 서버에서 관리.</li>
+          <li>카피: "다시 시도해 주세요" — README 카피 규칙(명사·라벨 중심)에서 예외적으로 안내 문구 허용. 기술 디테일("이미지 생성 API 오류") 노출 금지.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>E1 내 인라인 처리 (별도 화면 없이) — stage 상태가 명확히 다르므로 분리가 더 깔끔.</li>
+          <li>자동 재시도 (사용자 액션 없이 N회 재시도) — 실패 반복 시 사용자 혼란. 수동 재시도가 기대치 관리에 유리.</li>
+          <li>풀스크린 에러 모달 — M1 컨텍스트 유지 원칙과 충돌.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>재시도 전 자동 재시도 1회 (사용자 모르게) 후 그래도 실패 시 E2 노출 — 체감 실패율 감소 효과.</li>
+          <li>M1 재진입 시 자동 재시도 여부 — E2 상태에서 앱을 닫고 다시 열면?</li>
+          <li>PWA 푸시로 "재시도 가능" 알림 여부.</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

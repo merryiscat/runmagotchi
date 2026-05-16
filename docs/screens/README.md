@@ -13,9 +13,9 @@
 | O | 온보딩 (Onboarding) | 랜딩·소셜 로그인·알 선택 |
 | M | 메인 / 대시보드 (Main) | 로그인 후 기본 화면 |
 | U | 업로드 (Upload) | 스크린샷 업로드 → VLM 파싱 → 확정 |
-| E | 진화 (Evolution) | 부화·진화 전면 모달, 생성 실패, 히스토리 |
+| E | 진화 (Evolution) | 부화·진화 연출, 생성 실패 |
 | P | 프로필 (Profile) | 사용자·캐릭터 정보 |
-| B | 칭호 (Badge/Title) | 칭호 컬렉션·장착 |
+| B | ~~삭제~~ | 칭호는 P1 프로필에 통합 |
 
 새 영역 필요 시 한 글자 prefix 추가하고 사용자에게 확인.
 
@@ -36,23 +36,24 @@ S2(알 선택) 등 사주 기반 화면에서도 사주 단어 자체를 카피�
 - `element_base` (사주 오행 기준)
 - `element_balance` (오행 균형 비율)
 - `temperament` (기질)
+- `archetype` (아키타입)
+- `fantasy_modifier` (속성)
+- `signature_marks` (표식)
+- `color_palette` (색상)
+- `lore_one_liner` (한 줄 소개)
 - `일주` / `월주` / `년주` 등 사주 용어 일체
 - `십신` 관련 모든 표기
 
-## 4. 노출 가능 필드 (DNA 카드 공개 필드)
+## 4. 노출 가능 필드
 
 사용자에게 보여도 되는 화이트리스트. 이것만 화면에 노출:
 
 | 필드 | 라벨 | 토큰 |
 |------|------|------|
 | `name` | 이름 | `{캐릭터 이름}` |
-| `archetype` | 아키타입 | `{archetype}` |
-| `fantasy_modifier` | 속성 | `{fantasy_modifier}` |
-| `signature_marks` | 표식 | `{signature_marks}` |
-| `color_palette` | 색상 | `{color_palette}` |
-| `lore_one_liner` | 한 줄 | `{lore_one_liner}` |
+| `gender` | 성별 | `수컷` / `암컷` |
 
-signature_marks 이스터에그 조건(정확히 10km 부화·한번에 넘김·20km+)은 **사용자에게 비공개**. 화면에 "특별한 마크" 같은 강조 카피 금지 — 일반 필드처럼 노출.
+그 외 모든 필드(`archetype`, `fantasy_modifier`, `signature_marks`, `color_palette`, `lore_one_liner` 포함)는 내부 시드. 화면에 노출 금지.
 
 ## 5. 카피 보조 규칙
 
@@ -76,12 +77,11 @@ signature_marks 이스터에그 조건(정확히 10km 부화·한번에 넘김·
 
 ### 캐릭터
 - `{캐릭터 이름}` — 부화 시 사용자가 지정, 변경 불가
-- `{레벨}` — `Lv.1`~`Lv.50`
-- `{archetype}`, `{fantasy_modifier}`, `{signature_marks}`, `{lore_one_liner}` — DNA 카드 공개 필드
+- `{레벨}`, `{누적 EXP}`, 성장 단계(유아/유년/초기체/중기체/완전체) — **내부 데이터, 화면 노출 금지**
+- `{archetype}`, `{fantasy_modifier}`, `{signature_marks}`, `{lore_one_liner}` — 내부 시드 (화면 노출 금지)
 
 ### 누적 / 진행
 - `{누적 거리}` — 평생 누적 km
-- `{누적 EXP}` — 현재 단계 내 누적
 
 ## 7. 권한·로그인 상태 가정
 

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>P1 · 프로필 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+  .gnb__nav a.active { color: var(--c-0); font-weight: 700; }
+
+  /* 2컬럼: 좌 사이드바(캐릭터) + 우 정보 */
+  .p1-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .p1-layout { grid-template-columns: 200px 1fr; }
+  }
+
+  .p1-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-5) var(--s-4);
+    border-bottom: 1px solid var(--c-4);
+  }
+  @media (min-width: 768px) {
+    .p1-sidebar {
+      border-bottom: none;
+      border-right: 1px solid var(--c-4);
+      position: sticky;
+      top: 0;
+      align-self: start;
+    }
+  }
+
+  .p1-sidebar__img {
+    width: 100px;
+    height: 100px;
+    border: 1px solid var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-5);
+  }
+
+  .p1-content {
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-4) 0;
+    border-bottom: 1px solid var(--c-4);
+  }
+  .section-head:first-child { padding-top: 0; }
+
+  .section-head__label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-5);
+    font-size: var(--fs-sm);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row__label { color: var(--c-2); }
+  .info-row__value { font-weight: 700; }
+
+  .char-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) 0;
+    border-bottom: 1px solid var(--c-5);
+  }
+  .char-list-item:last-child { border-bottom: none; }
+
+  .char-list-item__thumb {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--c-2);
+    background: var(--c-5);
+    flex-shrink: 0;
+  }
+
+  .char-list-item__info { flex: 1; min-width: 0; }
+
+  .toggle {
+    width: 36px;
+    height: 20px;
+    border: 1px solid var(--c-3);
+    border-radius: 10px;
+    background: var(--c-5);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--c-3);
+  }
+  .toggle--on {
+    background: var(--c-1);
+    border-color: var(--c-1);
+  }
+  .toggle--on::after {
+    left: 18px;
+    background: var(--c-6);
+  }
+
+  .exp-bar {
+    height: 6px;
+    background: var(--c-5);
+    border: 1px solid var(--c-4);
+    margin-top: var(--s-2);
+  }
+  .exp-bar__fill {
+    height: 100%;
+    background: var(--c-2);
+  }
+
+  .state-label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-2);
+    margin-bottom: var(--s-3);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">P1 · 프로필 <small>· 작성 2026-05-16</small></div>
+      <dl>
+        <dt>목적</dt><dd>현재 캐릭터 정보 + 런닝 통계 + 캐릭터 관리 (stage 토글) + 칭호 기록</dd>
+        <dt>진입점</dt><dd>GNB "프로필" 탭</dd>
+        <dt>권한</dt><dd>로그인 필수</dd>
+        <dt>스타일</dt><dd>실험 — 좌측 사이드바에 캐릭터 고정, 우측에 정보 스크롤</dd>
+        <dt>상태</dt><dd>단일. 알 상태에서는 캐릭터 정보가 ??? 로 표시</dd>
+      </dl>
+    </div>
+
+    <!-- ===== 상태 A: 캐릭터 있음 ===== -->
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html" class="active">프로필</a></div>
+      </div>
+      <div class="p1-layout">
+
+        <!-- 좌 사이드바: 캐릭터 + 토글 (알 상태면 이미지=알, 이름/성별 = ???) -->
+        <div class="p1-sidebar">
+          <div class="p1-sidebar__img">캐릭터</div>
+          <div class="text-sm fw-bold"><span class="token">{캐릭터 이름}</span> <span class="text-xs text-muted"><span class="token">{성별}</span></span></div>
+          <a class="text-xs text-muted" href="#" style="margin-top: var(--s-1);">로그아웃</a>
+
+          <div style="width: 100%; margin-top: var(--s-4);">
+            <div class="text-xs fw-bold" style="margin-bottom: var(--s-2);">화면 표시</div>
+            <div class="char-list-item">
+              <div class="char-list-item__thumb">캐릭터</div>
+              <div class="char-list-item__info"><div class="text-xs"><span class="token">{이름}</span></div></div>
+              <div class="toggle toggle--on"></div>
+            </div>
+            <div class="char-list-item">
+              <div class="char-list-item__thumb">캐릭터</div>
+              <div class="char-list-item__info"><div class="text-xs">첫번째</div></div>
+              <div class="toggle toggle--on"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우 정보 -->
+        <div class="p1-content">
+          <div class="section-head"><span class="section-head__label">런닝 통계</span></div>
+          <div class="info-row"><span class="info-row__label">누적 거리</span><span class="info-row__value"><span class="token">{누적 거리}</span> km</span></div>
+          <div class="info-row"><span class="info-row__label">총 횟수</span><span class="info-row__value"><span class="token">{총 횟수}</span> 회</span></div>
+          <div class="info-row"><span class="info-row__label">최장 연속</span><span class="info-row__value"><span class="token">{최장 연속}</span> 일</span></div>
+          <div class="info-row"><span class="info-row__label">PB</span><span class="info-row__value"><span class="token">{PB}</span> km</span></div>
+
+          <div class="section-head"><span class="section-head__label">칭호</span><span class="text-xs text-muted">3개</span></div>
+          <div class="info-row"><span class="info-row__label">새벽의 주자</span><span class="text-xs text-muted">2026-04-12</span></div>
+          <div class="info-row"><span class="info-row__label">마라토너</span><span class="text-xs text-muted">2026-03-28</span></div>
+          <div class="info-row"><span class="info-row__label">꾸준한 발걸음</span><span class="text-xs text-muted">2026-03-15</span></div>
+
+        </div>
+
+      </div>
+    </div>
+
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">P1 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>실험 스타일 채택 — 좌측에 캐릭터+토글 고정, 우측에 정보 스크롤. 캐릭터를 항상 보면서 정보 탐색.</li>
+          <li>GNB(frame--web) + 프로필 탭 활성. M1/E1/E2/E4와 동일 패턴.</li>
+          <li>사이드바: 캐릭터 이미지 + 이름 + 성별 + 화면 표시 토글. 레벨·단계·EXP 비공개. 성장 중 캐릭터는 항상 ON(토글 불가). 완성 캐릭터만 넣고 뺄 수 있음.</li>
+          <li>정보 영역: 런닝 통계(평생 누적) + 칭호(획득 기록만) + 설정 링크.</li>
+          <li>모바일(768px 미만)에서는 세로 스택 — 사이드바가 상단, 정보가 하단.</li>
+          <li>알 상태: 동일 레이아웃. 사이드바의 캐릭터 이미지=알, 이름/성별=???. 화면 표시 토글·칭호는 비어있음.</li>
+          <li>공개 필드(이름·성별)만 노출.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안 (4스타일 비교 결과)</h3>
+        <ul>
+          <li>보편(세로 단일 컬럼) — 무난하나 캐릭터가 스크롤 밖으로 사라짐.</li>
+          <li>미니(토글만) — 정보 부족.</li>
+          <li>오버(스탯 그리드+타임라인) — 과잉.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>stage 동시 표시 상한.</li>
+          <li>캐릭터 탭 시 상세 보기 여부.</li>
+          <li>설정 화면 범위 (로그아웃·탈퇴·알림).</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

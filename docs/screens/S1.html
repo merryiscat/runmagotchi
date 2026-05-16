@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>S1 · 공유 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+
+  .state-label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-2);
+    margin-bottom: var(--s-3);
+  }
+
+  .m1-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .m1-layout { grid-template-columns: 1fr 1fr; }
+  }
+
+  .stage {
+    position: relative;
+    background: var(--c-5);
+    border-right: 1px solid var(--c-4);
+    min-height: 400px;
+    overflow: hidden;
+  }
+
+  .stage__label {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--c-3);
+    top: var(--s-3);
+    left: var(--s-4);
+  }
+
+  .stage__char {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 1px dashed var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+
+  .stage__footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-3) var(--s-4);
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+  }
+
+  .panel { display: flex; flex-direction: column; }
+
+  .panel__section {
+    padding: var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .panel__section:last-child { border-bottom: none; }
+
+  .stats-row { display: flex; gap: var(--s-4); text-align: center; }
+  .stats-row > div { flex: 1; }
+  .stat-v { font-size: var(--fs-xl); font-weight: 700; }
+  .stat-l { font-size: var(--fs-xs); color: var(--c-2); }
+
+  .period-select {
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--c-3);
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    background: var(--c-6);
+    color: var(--c-1);
+  }
+
+  .run-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-5);
+    font-size: var(--fs-sm);
+  }
+  .run-row:last-child { border-bottom: none; }
+
+  .code-tag {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .s1-entry {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-4);
+  }
+
+  /* 공동 목표 진행 바 */
+  .journey-bar {
+    height: 8px;
+    background: var(--c-5);
+    border: 1px solid var(--c-4);
+  }
+  .journey-bar__fill {
+    height: 100%;
+    background: var(--c-2);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">S1 · 공유 <small>· 작성 2026-05-16</small></div>
+      <dl>
+        <dt>목적</dt><dd>코드로 방 생성·참가. 모두의 캐릭터가 한 stage에서 공존 + 런닝 기록 공유 + 공동 목표</dd>
+        <dt>진입점</dt><dd>M1 또는 GNB에서 (위치 미정)</dd>
+        <dt>권한</dt><dd>로그인 필수</dd>
+        <dt>흐름</dt><dd>방 만들기 → 코드 발급 / 코드 입력 → 공유 공간</dd>
+        <dt>스타일</dt><dd>보편A(별도 공유 공간) + 실험B(공동 목표) 혼합</dd>
+      </dl>
+    </div>
+
+    <!-- ===== 입장 전 ===== -->
+
+    <div class="state-label">입장 전 — 방 만들기 / 코드 입력</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="s1-entry">
+        <div class="stack stack--lg">
+          <div class="text-center">
+            <div class="fw-bold mb-3">방 만들기</div>
+            <button class="btn btn--primary btn--full">생성</button>
+          </div>
+          <div style="text-align: center; color: var(--c-3);">또는</div>
+          <div>
+            <div class="fw-bold mb-3 text-center">코드 입력</div>
+            <input class="input" type="text" placeholder="코드 입력" maxlength="8" style="text-align: center; font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.1em;" />
+            <button class="btn btn--full" style="margin-top: var(--s-3);">참가</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 입장 후 ===== -->
+
+    <div class="state-label" style="margin-top: var(--s-6);">입장 후 — 공유 공간</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label">공유 공간 · <span class="code-tag">A3K9F2</span></div>
+          <div class="stage__char" style="top: 20%; left: 20%;">나</div>
+          <div class="stage__char" style="top: 45%; left: 55%;">유저B</div>
+          <div class="stage__char" style="top: 30%; left: 75%;">유저C</div>
+          <div class="stage__footer">3명 참여 중</div>
+        </div>
+        <div class="panel">
+          <!-- 공동 목표 -->
+          <div class="panel__section">
+            <div class="text-sm fw-bold mb-2">서울 → 부산</div>
+            <div class="text-xs text-muted mb-2">69.3 / 560 km (12%)</div>
+            <div class="journey-bar"><div class="journey-bar__fill" style="width: 12%;"></div></div>
+          </div>
+          <!-- 방 합산 스탯 -->
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 주</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v">69.3</div><div class="stat-l">km (합산)</div></div>
+              <div><div class="stat-v">12</div><div class="stat-l">회</div></div>
+            </div>
+          </div>
+          <!-- 기록 -->
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">기록</span>
+              <select class="period-select"><option>이번 주</option></select>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted"><span class="token">{캐릭터 이름}</span> · 05:32 /km</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">3.8 km</div><div class="text-xs text-muted">불꽃이 · 06:10 /km</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">10.1 km</div><div class="text-xs text-muted">달빛이 · 05:15 /km</div></div>
+              <div class="text-xs text-muted">어제</div>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">7.3 km</div><div class="text-xs text-muted">달빛이 · 05:42 /km</div></div>
+              <div class="text-xs text-muted">3일 전</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">S1 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>보편A(M1 2컬럼 패턴) + 실험B(공동 목표) 혼합. "우리의 M1" 구조에 함께 달리는 목표가 얹힌 형태.</li>
+          <li>좌 stage: 모두의 캐릭터가 함께 자유 이동. 코드 표시.</li>
+          <li>우 panel 상단: 공동 목표 진행 바 (서울→부산 등). 목표 달성 시 멤버 전원에게 보상 (stage 아이템·캐릭터 장식 등). 보상 내용은 달성 전까지 비공개 — 달성하면 받는 서프라이즈.</li>
+          <li>우 panel 중앙: 방 합산 런닝 스탯 (기간 드롭다운).</li>
+          <li>우 panel 하단: 멤버 전원 기록 피드 (기간 드롭다운). 업로드 버튼 없음 — 업로드는 M1에서.</li>
+          <li>멤버 캐릭터 정보: 이름 + 성별만 (공개 필드 규칙).</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안 (4안 비교 결과)</h3>
+        <ul>
+          <li>보편B(내 공간에 합류) — M1에 녹아드는 방식. 별도 화면이 더 명확해서 보편A 채택.</li>
+          <li>실험A(서로 들여다보기) — 카드 나열. 함께 있는 느낌이 약해서 미채택.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>진입점 위치 — GNB? M1 panel?</li>
+          <li>방 인원 상한.</li>
+          <li>방 유효 기간 — 영구? 기간제?</li>
+          <li>방장 권한 (강퇴·삭제).</li>
+          <li>다중 방 참여 가능 여부.</li>
+          <li>공동 목표 설정 방식 — 방장이 정함? 목록에서 선택?</li>
+          <li>보상 종류 — stage 아이템 (나무·벤치·꽃 등)? 캐릭터 장식 (모자·망토)?</li>
+          <li>목표 달성 후 다음 여정 자동 시작?</li>
+          <li>알 상태 사용자의 참여 — 알도 stage에 돌아다님?</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

@@ -32,3 +32,9 @@ Thumbs.db
 
 # Claude Code (개인 로컬 설정만 제외, skills/agents 등은 공유)
 .claude/settings.local.json
+
+# Playwright MCP
+.playwright-mcp/
+
+# 스크린샷 (와이어프레임 미리보기용, 커밋 불필요)
+*.png

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>E4 · Lv.50 완성 — Runmagotchi</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .m1-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .m1-layout { grid-template-columns: 1fr 1fr; }
+  }
+
+  .stage {
+    position: relative;
+    background: var(--c-5);
+    border-right: 1px solid var(--c-4);
+    min-height: 400px;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .stage { min-height: 560px; }
+  }
+
+  .stage__char {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 1px dashed var(--c-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+
+  .stage__char--sm {
+    width: 72px;
+    height: 72px;
+  }
+
+  .stage__label {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--c-3);
+  }
+
+  .stage__footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--s-4);
+    text-align: center;
+  }
+
+  .panel { display: flex; flex-direction: column; }
+
+  .panel__section {
+    padding: var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .panel__section:last-child { border-bottom: none; }
+
+  .stats-row { display: flex; gap: var(--s-4); text-align: center; }
+  .stats-row > div { flex: 1; }
+  .stat-v { font-size: var(--fs-xl); font-weight: 700; }
+  .stat-l { font-size: var(--fs-xs); color: var(--c-2); }
+
+  .period-select {
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--c-3);
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    background: var(--c-6);
+    color: var(--c-1);
+    cursor: pointer;
+  }
+
+  .run-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-5);
+    font-size: var(--fs-sm);
+  }
+  .run-row:last-child { border-bottom: none; }
+
+  .gnb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--c-4);
+  }
+  .gnb__logo { font-weight: 900; font-size: var(--fs-lg); }
+  .gnb__nav { display: flex; gap: var(--s-4); font-size: var(--fs-sm); }
+  .gnb__nav a { text-decoration: none; color: var(--c-2); }
+
+  .state-label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-2);
+    margin-bottom: var(--s-3);
+  }
+
+  .motion-hint {
+    position: absolute;
+    bottom: var(--s-5);
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .motion-hint span {
+    display: inline-block;
+    border: 1px dashed var(--c-3);
+    padding: var(--s-2) var(--s-3);
+    font-size: var(--fs-xs);
+    color: var(--c-2);
+    background: var(--c-6);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <main class="page__main">
+
+    <div class="meta">
+      <div class="meta__title">E4 · Lv.50 완성 <small>· 작성 2026-05-16</small></div>
+      <dl>
+        <dt>목적</dt><dd>Lv.50 도달 시 완성 축하. 완전체 캐릭터는 stage에 잔류하고, 사용자가 원할 때 새 알 시작</dd>
+        <dt>진입점</dt><dd><a href="M1.html">M1</a> 진입 시 Lv.50 도달 확인되면 자동 발동</dd>
+        <dt>다음</dt><dd>축하 종료 → <a href="M1.html">M1</a> (완전체 + "새 알" 버튼 활성). 새 알 버튼 → 새 알이 stage에 추가</dd>
+        <dt>권한</dt><dd>로그인 필수 · Lv.50 도달 직후</dd>
+        <dt>상태</dt><dd>① 완성 축하 연출 → ② M1 복귀 (완전체 + 새 알 버튼) → ③ 새 알 등장 (완전체와 공존)</dd>
+      </dl>
+    </div>
+
+    <!-- ===== ① 완성 축하 ===== -->
+
+    <div class="state-label">① — 완성 축하 (자동 · stage 위 연출)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 완성 축하 연출</div>
+          <div class="stage__char" style="top: 35%; left: 50%; transform: translateX(-50%);">완전체</div>
+          <div class="stage__footer">
+            <div class="fw-bold"><span class="token">{캐릭터 이름}</span></div>
+            <div class="text-sm text-muted"><span class="token">{성별}</span></div>
+            <div class="text-xs text-muted" style="margin-top: var(--s-2);">완성</div>
+          </div>
+          <div class="motion-hint"><span>빛 + 파티클 연출 → 완전체 캐릭터 강조</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 달</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted">05:32 /km · 28분</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ② M1 복귀 — 완전체 + 새 알 버튼 ===== -->
+
+    <div class="state-label" style="margin-top: var(--s-6);">② — M1 복귀 (완전체 잔류 + panel에 "새 알" 버튼 활성)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 완전체 자유 이동 (Lv.50, 성장 종료)</div>
+          <div class="stage__char" style="top: 40%; left: 40%;">완전체</div>
+          <div class="stage__footer">
+            <div class="fw-bold"><span class="token">{캐릭터 이름}</span></div>
+            <div class="text-xs text-muted"><span class="token">{성별}</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 달</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+          <div class="panel__section">
+            <button class="btn btn--full">새 알</button>
+          </div>
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted">05:32 /km · 28분</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ③ 새 알 등장 — 완전체와 공존 ===== -->
+
+    <div class="state-label" style="margin-top: var(--s-6);">③ — 새 알 등장 (완전체와 함께 stage에 공존, 새 사이클 시작)</div>
+
+    <div class="frame frame--web" style="min-height: auto;">
+      <div class="gnb">
+        <div class="gnb__logo">Runmagotchi</div>
+        <div class="gnb__nav"><a href="U1.html">업로드</a><a href="P1.html">프로필</a></div>
+      </div>
+      <div class="m1-layout">
+        <div class="stage">
+          <div class="stage__label" style="top: var(--s-3); left: var(--s-4);">스테이지 — 완전체 + 새 알 공존</div>
+          <div class="stage__char" style="top: 30%; left: 25%;">완전체</div>
+          <div class="stage__char stage__char--sm" style="top: 55%; left: 55%;">새 알</div>
+          <div class="stage__footer">
+            <div class="text-xs text-muted">새 알 · 누적 0 km</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__section">
+            <div class="row row--between mb-4">
+              <span class="text-sm fw-bold">런닝 스탯</span>
+              <select class="period-select"><option>이번 달</option></select>
+            </div>
+            <div class="stats-row">
+              <div><div class="stat-v"><span class="token">{거리}</span></div><div class="stat-l">km</div></div>
+              <div><div class="stat-v"><span class="token">{횟수}</span></div><div class="stat-l">회</div></div>
+              <div><div class="stat-v"><span class="token">{연속}</span></div><div class="stat-l">일 연속</div></div>
+            </div>
+          </div>
+          <div class="panel__section">
+            <a class="btn btn--primary btn--full btn--lg" href="U1.html">업로드</a>
+          </div>
+          <div class="panel__section" style="flex: 1;">
+            <div class="row row--between mb-3">
+              <span class="text-sm fw-bold">최근 기록</span>
+              <a class="text-xs text-muted" href="M2.html">전체 보기</a>
+            </div>
+            <div class="run-row">
+              <div><div class="text-sm fw-bold">5.2 km</div><div class="text-xs text-muted">05:32 /km · 28분</div></div>
+              <div class="text-xs text-muted">오늘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="page__notes">
+    <div class="notes">
+      <div class="notes__title">E4 · 사이드 노트</div>
+
+      <section>
+        <h3>의도</h3>
+        <ul>
+          <li>완전체 캐릭터는 stage에서 사라지지 않음. 새 알·새 캐릭터와 함께 stage에서 공존·자유 이동.</li>
+          <li>① 완성 축하: Lv.50 도달 시 M1 진입에서 자동 발동. 빛·파티클로 완전체 강조.</li>
+          <li>② M1 복귀: 축하 종료 후 panel에 "새 알" 버튼 등장. 사용자가 원할 때 누름 — 강제 아님. 완전체만으로 계속 쓸 수 있음.</li>
+          <li>③ 새 알 등장: "새 알" 버튼 누르면 새 알 생성(사주 시드 재사용, 새 DNA) + stage에 추가. 완전체와 새 알이 함께 돌아다님. 새 알의 누적 거리 0km부터 새 사이클.</li>
+          <li>"새 알" 버튼은 활성 알/캐릭터가 없을 때만 노출. 이미 성장 중인 캐릭터가 있으면 숨김.</li>
+          <li>EXP·부화·진화는 항상 최신 알/캐릭터 기준. 완전체는 stage 장식으로만 존재.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>대안</h3>
+        <ul>
+          <li>자동 가챠 (Lv.50 즉시 새 알 부여) — 쉬어가기 불가, 강제 사이클.</li>
+          <li>O2 재방문 (알 3개 중 선택) — 첫 경험 반복, 2회차 특별감 부족.</li>
+          <li>명예의 전당 수납 후 새 알 — 캐릭터가 사라지면 아쉬움. 공존이 더 자연스러움.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>미정</h3>
+        <ul>
+          <li>stage에 캐릭터 N마리 공존 시 시각 밀도 — 완전체 3마리 + 알 1개면 복잡할 수 있음. 캐릭터 수 상한?</li>
+          <li>완전체 캐릭터 탭 시 상호작용 — 이름·정보 표시? 아무 반응 없음?</li>
+          <li>런닝 스탯 귀속 — 업로드 EXP는 새 알/캐릭터에만? 완전체에도 뭔가 반영?</li>
+          <li>새 알 생성 시 DNA 차별화 — 같은 생년월일인데 다른 결과. 시드에 회차 번호 추가?</li>
+          <li>"새 알" 버튼 위치 — panel 내 업로드 아래? 별도 섹션?</li>
+          <li>완전체만 있는 상태(새 알 없이)에서 업로드 시 — EXP 무시? 업로드 차단? 칭호만 부여?</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>
