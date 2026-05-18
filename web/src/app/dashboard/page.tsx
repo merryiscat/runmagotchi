@@ -1,13 +1,17 @@
 /**
  * 대시보드 (M1)
  *
- * profiles(계정) + characters(활성 캐릭터) + character_images(도트/일러스트) 조회
+ * profiles(계정) + characters(활성 캐릭터) + character_images(도트/일러스트) 조회.
+ * 코인 잔액은 GNB 상점 링크 옆에 표시.
  */
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import RetryCharacter from '@/components/RetryCharacter';
 import IllustButton from '@/components/IllustButton';
+import BouncingCharacter from '@/components/BouncingCharacter';
+import ZoomableStage from '@/components/ZoomableStage';
+import InventoryBar from '@/components/InventoryBar';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -21,47 +25,45 @@ export default async function DashboardPage() {
     .single();
   if (!profile) redirect('/onboarding');
 
-  // 활성 캐릭터 조회
-  const { data: character } = await supabase
+  // 활성 캐릭터 조회 (가장 최근 것 1개)
+  const { data: characters } = await supabase
     .from('characters')
-    .select('id, name, gender, stage, egg_image_url, hatched, image_status')
+    .select('*')
     .eq('user_id', user.id)
     .eq('is_active', true)
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1);
 
+  const character = characters?.[0] ?? null;
   if (!character) redirect('/egg-select');
 
-  // 런닝 기록 조회 → 누적 거리/횟수 계산
+  // 런닝 기록 조회
   const { data: runs } = await supabase
     .from('runs')
-    .select('distance_km, duration_minutes, pace, run_date')
+    .select('distance_km, duration_minutes, pace, run_date, tokens_earned')
     .eq('character_id', character.id)
     .order('run_date', { ascending: false });
 
   const totalKm = runs?.reduce((sum, r) => sum + Number(r.distance_km), 0) || 0;
   const totalRuns = runs?.length || 0;
-
-  // 부화 조건 체크: 10km 이상인데 아직 부화 안 했으면 부화 페이지로
-  if (totalKm >= 10 && !character.hatched) {
-    redirect('/hatching');
-  }
+  const coins = character.tokens || 0;
 
   // 도트 idle 이미지
-  const { data: pixelImg } = character ? await supabase
+  const { data: pixelImg } = await supabase
     .from('character_images')
     .select('url')
     .eq('character_id', character.id)
     .eq('type', 'pixel_idle')
-    .single() : { data: null };
+    .single();
 
   // 일러스트 이미지
-  const { data: illustImg } = character ? await supabase
+  const { data: illustImg } = await supabase
     .from('character_images')
     .select('url')
     .eq('character_id', character.id)
     .eq('type', 'illust')
     .eq('stage', 'baby')
-    .single() : { data: null };
+    .single();
 
   return (
     <div className="frame frame--web" style={{ minHeight: '100vh', maxWidth: 'none' }}>
@@ -71,7 +73,14 @@ export default async function DashboardPage() {
         <a href="/dashboard" className="gnb__logo">
           <img src="/logo.png" alt="Runmagotchi" style={{ height: 28 }} />
         </a>
-        <nav className="gnb__nav">
+        <nav className="gnb__nav" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
+          {/* 코인 (클릭 불가, 표시만) */}
+          <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--ink-default)' }}>
+            🪙 {coins}
+          </span>
+          {/* 구분선 */}
+          <span style={{ width: 1, height: 14, background: 'var(--line-soft)' }} />
+          <a href="/shop">상점</a>
           <a href="/profile">프로필</a>
           <form action="/auth/signout" method="post" style={{ display: 'inline' }}>
             <button type="submit" style={{
@@ -85,25 +94,18 @@ export default async function DashboardPage() {
       {/* m1-layout */}
       <div className="m1-layout" style={{ flex: 1 }}>
 
-        {/* Stage */}
-        <div className="stage">
-          {/* 일러스트 보기 버튼 */}
-          {illustImg?.url && <IllustButton url={illustImg.url} />}
+        {/* Stage 영역 — 줌: 웹 휠, 모바일 핀치 */}
+        <div className="stage" style={{ overflow: 'hidden', touchAction: 'none', background: 'transparent' }}>
+          {/* 일러스트 보기 버튼 — 부화 후에만 표시 (알 상태는 스포일러) */}
+          {character.hatched && illustImg?.url && <IllustButton url={illustImg.url} />}
 
-          {/* 스테이지 중앙 */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '48px var(--s-5)',
-          }}>
-            <div style={{ width: 220, maxWidth: '70%' }}>
+          {/* 스테이지 콘텐츠: 줌/패닝 가능 */}
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <ZoomableStage>
               {character.hatched && pixelImg?.url ? (
-                /* 부화 완료 → 도트 캐릭터 */
-                <img src={pixelImg.url} alt="캐릭터"
-                  style={{ width: '100%', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }} />
+                <></>
               ) : character.egg_image_url ? (
-                /* 부화 전 → 알 이미지 */
-                <div>
+                <div style={{ width: 220, maxWidth: '70%' }}>
                   <img src={character.egg_image_url} alt="알"
                     style={{ width: '100%', objectFit: 'contain', display: 'block' }} />
                   {character.image_status === 'failed' && <RetryCharacter characterId={character.id} />}
@@ -113,24 +115,36 @@ export default async function DashboardPage() {
                   ? <RetryCharacter characterId={character.id} />
                   : null
               )}
-            </div>
+            </ZoomableStage>
           </div>
 
-          {/* 풋터 */}
-          <div className="stage__footer">
-            {character.hatched && character.name ? (
+          {/* 부화 후: 캐릭터가 스테이지 전체를 돌아다님 (ZoomableStage 밖, absolute) */}
+          {character.hatched && pixelImg?.url && (
+            <BouncingCharacter characterId={character.id} idleUrl={pixelImg.url} />
+          )}
+
+          {/* 스테이지 하단: 이름 + 인벤토리 아이템 사용 */}
+          <div className="stage__footer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
+            {character.hatched && character.name && (
               <div>
                 <div className="fw-bold text-sm">{character.name}</div>
                 <div className="text-xs text-muted">{character.gender}</div>
               </div>
-            ) : (
-              <div className="text-xs text-muted">부화 전</div>
             )}
+            <InventoryBar
+              characterId={character.id}
+              initialInventory={character.inventory || {}}
+              initialExp={character.total_exp || 0}
+              initialLevel={character.level || 0}
+              hatched={!!character.hatched}
+            />
           </div>
         </div>
 
         {/* Panel */}
         <div className="panel">
+
+          {/* 런닝 스탯 */}
           <div className="panel__section">
             <div className="row row--between mb-4">
               <span className="text-sm fw-bold">런닝 스탯</span>
@@ -145,10 +159,12 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* 업로드 버튼 */}
           <div className="panel__section">
-            <a className="btn btn--primary btn--full btn--lg" href="/upload">업로드</a>
+            <a className="btn btn--primary btn--full btn--lg" href="/upload">기록 업로드</a>
           </div>
 
+          {/* 최근 기록 */}
           <div className="panel__section" style={{ flex: 1 }}>
             <div className="row row--between mb-3">
               <span className="text-sm fw-bold">최근 기록</span>
@@ -159,7 +175,10 @@ export default async function DashboardPage() {
                 <div key={i} className="run-row">
                   <div>
                     <div className="text-sm fw-bold">{Number(r.distance_km).toFixed(1)} km</div>
-                    <div className="text-xs text-muted">{r.pace || ''} {r.duration_minutes}분</div>
+                    <div className="text-xs text-muted">
+                      {r.pace || ''} {r.duration_minutes}분
+                      {r.tokens_earned ? ` · 🪙${r.tokens_earned}` : ''}
+                    </div>
                   </div>
                   <div className="text-xs text-muted">{r.run_date}</div>
                 </div>

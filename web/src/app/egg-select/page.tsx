@@ -52,6 +52,13 @@ export default function EggSelectPage() {
 
     const chosen = eggs[selected];
 
+    /* 기존 활성 캐릭터 비활성화 (중복 방지) */
+    await supabase
+      .from('characters')
+      .update({ is_active: false })
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
     /* 성별 50% 랜덤 */
     const gender = Math.random() < 0.5 ? '수컷' : '암컷';
 

@@ -27,12 +27,14 @@ export default function HatchingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = '/login'; return; }
 
-      const { data: char } = await supabase
+      const { data: chars } = await supabase
         .from('characters')
         .select('id, gender, hatched, egg_image_url')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const char = chars?.[0] ?? null;
 
       if (!char) { window.location.href = '/dashboard'; return; }
 
