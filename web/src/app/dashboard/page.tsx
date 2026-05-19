@@ -99,11 +99,11 @@ export default async function DashboardPage() {
           {/* 일러스트 보기 버튼 — 부화 후에만 표시 (알 상태는 스포일러) */}
           {character.hatched && illustImg?.url && <IllustButton url={illustImg.url} />}
 
-          {/* 스테이지 콘텐츠: 줌/패닝 가능 */}
+          {/* 스테이지 콘텐츠: 줌/패닝 가능 (알 + 캐릭터 모두 포함) */}
           <div style={{ position: 'absolute', inset: 0 }}>
             <ZoomableStage>
               {character.hatched && pixelImg?.url ? (
-                <></>
+                <BouncingCharacter characterId={character.id} idleUrl={pixelImg.url} />
               ) : character.egg_image_url ? (
                 <div style={{ width: 220, maxWidth: '70%' }}>
                   <img src={character.egg_image_url} alt="알"
@@ -117,11 +117,6 @@ export default async function DashboardPage() {
               )}
             </ZoomableStage>
           </div>
-
-          {/* 부화 후: 캐릭터가 스테이지 전체를 돌아다님 (ZoomableStage 밖, absolute) */}
-          {character.hatched && pixelImg?.url && (
-            <BouncingCharacter characterId={character.id} idleUrl={pixelImg.url} />
-          )}
 
           {/* 스테이지 하단: 이름 + 인벤토리 아이템 사용 */}
           <div className="stage__footer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>

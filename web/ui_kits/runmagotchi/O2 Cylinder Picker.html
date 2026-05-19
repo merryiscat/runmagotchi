@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O2 — 알 선택 (실린더)</title>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="cylinder-picker.css">
+<style>
+  /* O2 화면 자체 레이아웃 (실린더만 살아남도록 미니멀) */
+  .o2-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-page);
+  }
+  .o2-frame {
+    flex: 1;
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+  .o2-head {
+    padding: var(--s-6) var(--s-5) var(--s-3);
+    text-align: center;
+  }
+  .o2-head__step {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--ink-muted);
+    letter-spacing: 0.2em;
+    margin-bottom: var(--s-3);
+  }
+  .o2-head__title {
+    font-size: var(--fs-2xl);
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: var(--s-2);
+  }
+  .o2-head__sub {
+    font-size: var(--fs-sm);
+    color: var(--ink-muted);
+  }
+  .o2-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* picked-flash — 확정 후 짧게 보여줄 메시지 */
+  .o2-toast {
+    position: fixed;
+    bottom: var(--s-6);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-strong);
+    color: var(--paper);
+    padding: var(--s-3) var(--s-5);
+    font-size: var(--fs-sm);
+    border-radius: 2px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 240ms ease-out;
+    z-index: 50;
+  }
+  .o2-toast.is-on { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- 기존 디자인 시스템 컴포넌트 재사용 -->
+<script type="text/babel" src="controls.jsx"></script>
+<script type="text/babel" src="stage.jsx"></script>
+<script type="text/babel" src="cylinder-picker.jsx"></script>
+
+<script type="text/babel">
+  // runmagotchi 의 3가지 알 팔레트 (screens.jsx 와 동일)
+  const EGG_PALETTES = [
+    ['#E8D8C0', '#9A7B5C', '#3B2A1F'], // earth
+    ['#C8DDE8', '#7AA3C1', '#2F4858'], // water
+    ['#F4DCDA', '#C58A87', '#6B2A2A'], // fire
+  ];
+  const EGG_LABELS = ['01', '02', '03'];
+  const EGG_NAMES  = ['흙', '물', '불'];
+
+  function O2Cylinder() {
+    const [picked, setPicked] = React.useState(null);
+    const [toast, setToast] = React.useState(false);
+
+    function onPick(idx, palette) {
+      setPicked({ idx, palette });
+      setToast(true);
+      setTimeout(() => setToast(false), 1800);
+    }
+
+    return (
+      <div className="o2-page">
+        <div className="o2-frame">
+          <div className="o2-head">
+            <div className="o2-head__step">STEP 02 · OF 03</div>
+            <div className="o2-head__title">알 선택</div>
+            <div className="o2-head__sub">세 개의 알 중 하나가 당신과 함께 자라납니다.</div>
+          </div>
+          <div className="o2-body">
+            <CylinderPicker
+              palettes={EGG_PALETTES}
+              labels={EGG_LABELS}
+              onPick={onPick}
+            />
+          </div>
+        </div>
+
+        <div className={`o2-toast ${toast ? 'is-on' : ''}`}>
+          {picked && `${EGG_LABELS[picked.idx]} ${EGG_NAMES[picked.idx]}의 알을 선택했습니다`}
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<O2Cylinder />);
+</script>
+</body>
+</html>

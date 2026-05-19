@@ -1,0 +1,288 @@
+/* Runmagotchi Design System
+ * colors_and_type.css
+ *
+ * Status: WIREFRAME STAGE. 흑백 6단계 회색만 사용.
+ * Color / shadow / gradient is intentionally OUT OF SCOPE at this phase.
+ * The single source of in-app color is the per-character `color_palette`,
+ * applied only to the egg/crack/character art (NOT to UI chrome).
+ *
+ * Imported from runmagotchi/docs/screens/wireframe.css and extended with
+ * semantic tokens (h1, body, code, etc.) for design-system use.
+ */
+
+@font-face {
+  font-family: "Noto Sans KR";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: local("Noto Sans KR Regular"),
+       url("./fonts/NotoSansKR-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans KR";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: local("Noto Sans KR Bold"),
+       url("./fonts/NotoSansKR-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans KR";
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: local("Noto Sans KR Black"),
+       url("./fonts/NotoSansKR-Black.woff2") format("woff2");
+}
+
+:root {
+  /* ---------- COLOR — 오방색 시스템 ----------
+   * Chosen 2026-05-16. Replaces the wireframe-only grayscale.
+   *
+   * Structure:
+   *   • Chrome stays neutral (한지 paper + 흙 clay + 먹 ink). Most surfaces never see saturated color.
+   *   • Five accents drawn from 오방색 (Korean five-direction colors). Each accent maps to a
+   *     specific product state — never used decoratively. One accent per screen as a rule.
+   *   • Saju is the internal seed; 오방색 is the aesthetic surface. The two are not the same
+   *     thing — 오방색 is widely-recognized Korean color heritage (태권도복, 도시락, 단청).
+   *     The words 사주 / 운명 remain forbidden.
+   *
+   * The old --c-0..--c-6 grayscale tokens are kept as aliases so the existing wireframes
+   * and the UI kit do not break. New work must use the semantic tokens below.
+   */
+
+  /* Chrome — neutral 한지 + 흙 + 먹 */
+  --paper:        #FAFAF7;  /* page background (한지 톤) */
+  --paper-warm:   #F5F1E8;  /* secondary page surface */
+  --surface:      #FFFFFF;  /* card, frame inner */
+  --clay:         #EAE3D8;  /* stage — the only consistently tinted surface */
+  --clay-soft:    #F0EBE0;  /* subtle inset alt */
+
+  --line-strong:  #4A463E;  /* frame outer border (먹 묽힘) */
+  --line:         #B8B2A6;  /* card/list/input border */
+  --line-soft:    #D2CEC4;  /* divider */
+  --line-faint:   #E8E3D8;  /* hairline */
+
+  --ink-strong:   #1A1A1A;  /* 먹 — titles, primary text, primary button */
+  --ink-default:  #3A3A3A;  /* body */
+  --ink-muted:    #707070;  /* labels, captions, inactive nav */
+  --ink-faint:    #A09A8E;  /* placeholders */
+
+  /* 오방색 — five-direction accents.
+   * Use rules:
+   *   • One accent per screen. Two only with explicit justification.
+   *   • 적 is reserved for the upload/confirm flow — DO NOT also use it for danger.
+   *     Destructive states stay grayscale + heavier border weight (per the original system).
+   *   • Each accent owns specific product surfaces (see --role below). */
+  --cheong:       #2D5F4F;  /* 청 · 동 · green-blue. Streak, 꾸준한 발걸음 칭호, daily-rhythm states */
+  --jeok:         #B33A2A;  /* 적 · 남 · deep red. Upload, 확정, primary CTA only */
+  --hwang:        #C99A2E;  /* 황 · 중앙 · ochre gold. New 칭호, evolution-complete moments */
+  --baek:         #B8B5AA;  /* 백 · 서 · 은빛. 완전체 / Lv.50 silver halo */
+  --heuk:         #1F2937;  /* 흑 · 북 · deep blue-black. 야간런, 밤의 수호자, night-cycle titles */
+
+  /* Accent inks — text/icon color when set ON an accent surface */
+  --on-cheong:    #FFFFFF;
+  --on-jeok:      #FFFFFF;
+  --on-hwang:     #1A1A1A;
+  --on-baek:      #1A1A1A;
+  --on-heuk:      #FAFAF7;
+
+  /* Reserved: filled at runtime per-character. The per-user color_palette derives from saju,
+   * applied only to the egg / crack / AI character art. Never on UI chrome. */
+  --char-color-1: transparent;
+  --char-color-2: transparent;
+  --char-color-3: transparent;
+
+  /* ---------- Backward compatibility — old grayscale aliases ----------
+   * Old wireframe code still uses --c-0..--c-6. These now resolve to the closest
+   * semantic equivalent so legacy screens keep working without touch-up. */
+  --c-0: var(--ink-strong);
+  --c-1: var(--ink-default);
+  --c-2: var(--ink-muted);
+  --c-3: var(--ink-faint);
+  --c-4: var(--line);
+  --c-5: var(--clay);
+  --c-6: var(--surface);
+
+  /* Semantic foreground / surface aliases (re-pointed) */
+  --fg-strong:    var(--ink-strong);
+  --fg-default:   var(--ink-default);
+  --fg-muted:     var(--ink-muted);
+  --fg-faint:     var(--ink-faint);
+
+  --surface-page:  var(--paper);
+  --surface-stage: var(--clay);
+  --surface-inset: var(--paper-warm);
+
+  /* ---------- SPACING — 4px base, 7 steps ---------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* ---------- BORDER RADIUS ----------
+   * Wireframes use 0 radius for chrome (frames, cards, inputs, buttons).
+   * Pill / circle are reserved for: avatars, character disks, toggle handles,
+   * the FAB upload button, the egg illustration corners (12px).
+   * No "rounded-card" treatment anywhere. */
+  --r-0: 0;       /* default — frames, cards, buttons, inputs */
+  --r-sm: 2px;    /* code chips, token pills */
+  --r-md: 8px;    /* dropzone icon square */
+  --r-lg: 12px;   /* egg card image */
+  --r-full: 9999px; /* avatars, toggle thumbs, FAB */
+
+  /* ---------- SHADOW / ELEVATION ----------
+   * Wireframe stage: ZERO shadow. Elevation is signalled by:
+   *   1) border weight (1px → 2px → 3px)
+   *   2) border color (--c-4 → --c-3 → --c-0)
+   *   3) backdrop dim (rgba(0,0,0,.4)) for modal/popup hosts.
+   * The tokens below are placeholders for post-MVP and should NOT be used yet. */
+  --shadow-none: none;
+  --backdrop-modal: rgba(0, 0, 0, 0.4);
+
+  /* ---------- FONT SIZE — 6-step type scale ---------- */
+  --fs-xs:  12px;
+  --fs-sm:  14px;
+  --fs-md:  16px;
+  --fs-lg:  20px;
+  --fs-xl:  24px;
+  --fs-2xl: 32px;
+  --fs-3xl: 40px;  /* O1 wordmark only */
+
+  /* ---------- FONT WEIGHT ---------- */
+  --fw-regular: 400;
+  --fw-bold:    700;
+  --fw-black:   900; /* wordmark + GNB logo only */
+
+  /* ---------- LINE HEIGHT ---------- */
+  --lh-tight: 1.2;   /* buttons, large headings */
+  --lh-snug:  1.4;   /* social buttons, labels */
+  --lh-base:  1.5;   /* body */
+  --lh-loose: 1.6;   /* legal / disclaimer text */
+
+  /* ---------- FONT FAMILIES ----------
+   * Korean-first stack. System fonts lead so iOS/macOS render Apple SD Gothic
+   * Neo natively; Noto Sans KR is the cross-platform fallback. */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Noto Sans KR",
+    "Apple SD Gothic Neo", "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", Menlo, Consolas,
+    "Noto Sans KR", monospace; /* tokens: {거리}, {캐릭터 이름}, etc. */
+}
+
+/* ============================================================
+ * SEMANTIC TYPE — wireframe wordmark + headings + body
+ * ============================================================ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+  color: var(--fg-strong);
+  background: var(--surface-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wordmark — O1 landing only. ~40px, weight 900, tight letter-spacing. */
+.t-wordmark {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-black);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+/* GNB logo — top-left across all post-login screens. */
+.t-logo {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-black);
+  line-height: 1;
+}
+
+/* Page title (gallery h1, P1 root headings). */
+.t-h1 {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--fg-strong);
+}
+
+/* Section heads inside notes panels, mode labels (E1). */
+.t-h2 {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--fg-strong);
+}
+
+/* Meta-block title, panel-section titles, popup titles. */
+.t-h3 {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  color: var(--fg-strong);
+}
+
+/* Numbers in stats-row — "5.2", "28분". Always weight 700. */
+.t-stat {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--fg-strong);
+}
+
+/* Stat unit label under big number — "km", "회". */
+.t-stat-label {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+/* Body — default paragraph. */
+.t-body {
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+  color: var(--fg-default);
+}
+
+/* Body-small — list rows, run rows, side notes. */
+.t-body-sm {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  color: var(--fg-default);
+}
+
+/* Caption / muted — timestamps, helper text. */
+.t-caption {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+/* Legal / disclaimer — under social login. */
+.t-legal {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-loose);
+  color: var(--fg-muted);
+}
+
+/* User-data token — {캐릭터 이름}, {거리}, etc. Monospace + inset chip. */
+.t-token {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--fg-default);
+  background: var(--c-5);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-sm);
+}
+
+/* Code block (catalog __code). */
+.t-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  background: var(--c-5);
+  padding: var(--s-3);
+  white-space: pre-wrap;
+  color: var(--fg-default);
+}

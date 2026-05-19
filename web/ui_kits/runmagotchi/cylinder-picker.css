@@ -1,0 +1,157 @@
+/* cylinder-picker.css — 3D 실린더 알 선택 컴포넌트 스타일 */
+
+.cyl-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-6) var(--s-4) var(--s-7);
+  width: 100%;
+}
+
+.cyl-scene {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  height: 320px;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+.cyl-scene:active { cursor: grabbing; }
+
+.cyl-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cyl-drum {
+  position: relative;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.cyl-slot {
+  position: absolute;
+  width: 200px;
+  height: 240px;
+  top: -120px;
+  left: -100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  /* The transform itself isn't transitioned (drum handles that),
+     but filter has a gentle pulse so the dimming is smooth at rest too. */
+  transition: filter 220ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 알 자체 */
+.cyl-egg {
+  width: 180px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-3);
+}
+
+.cyl-slot-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cyl-slot.is-front .cyl-slot-label {
+  color: var(--ink-strong);
+  font-weight: 700;
+}
+
+/* 원통 표면 가이드라인 (얇은 가로 줄 2개) */
+.cyl-rail {
+  position: absolute;
+  left: 50%;
+  width: 520px;
+  max-width: 90%;
+  height: 1px;
+  background: var(--line-soft);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.cyl-rail--top    { top: calc(50% - 110px); }
+.cyl-rail--bottom { top: calc(50% + 110px); }
+
+/* 바닥의 부드러운 그림자 — 알이 떠 있는 느낌 */
+.cyl-floor {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  max-width: 80%;
+  height: 28px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.06) 40%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  pointer-events: none;
+}
+
+/* 인디케이터 점 */
+.cyl-dots {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+.cyl-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition: background 220ms ease-out, transform 220ms ease-out;
+}
+.cyl-dot.is-on {
+  background: var(--ink-strong);
+  transform: scale(1.5);
+}
+
+.cyl-caption { text-align: center; }
+
+.cyl-confirm {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--s-3);
+}
+
+/* 첫 진입 페이드인 — transform 은 React state 가 담당하므로 opacity 만 다룸 */
+@keyframes cyl-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.cyl-drum {
+  animation: cyl-fadein 600ms ease-out both;
+}
+
+/* 알 그림자 — 약간의 깊이 */
+.cyl-egg .egg-art {
+  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.35);
+}
+
+/* 화면 좁을 때 */
+@media (max-width: 520px) {
+  .cyl-scene { height: 280px; }
+  .cyl-slot { width: 160px; height: 200px; top: -100px; left: -80px; }
+  .cyl-egg { width: 140px; height: 160px; }
+}

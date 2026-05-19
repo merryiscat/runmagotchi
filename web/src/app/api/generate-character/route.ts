@@ -3,7 +3,7 @@
  *
  * 1단계: baby illust + final illust 병렬 생성
  * 2단계: baby illust → 도트 변환 (pixel_idle)
- * 3단계: pixel_idle 참조 → walk1, walk2, blink, happy
+ * 3단계: pixel_idle 참조 → bounce1~4 (폴짝폴짝 뛰는 애니메이션)
  *
  * service_role 키로 RLS 우회. Storage + DB 직접 저장.
  */
@@ -19,16 +19,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+/** 이미지 응답 타입 (b64_json 포함) */
+type ImageResult = { data: { b64_json?: string }[] };
+
 /** 이미지 생성 + 1회 재시도 */
-async function generateWithRetry(params: Parameters<typeof openai.images.generate>[0]) {
-  try { return await openai.images.generate(params); }
-  catch { await new Promise(r => setTimeout(r, 3000)); return await openai.images.generate(params); }
+async function generateWithRetry(params: Parameters<typeof openai.images.generate>[0]): Promise<ImageResult> {
+  try { return await openai.images.generate(params) as ImageResult; }
+  catch { await new Promise(r => setTimeout(r, 3000)); return await openai.images.generate(params) as ImageResult; }
 }
 
 /** 이미지 편집 + 1회 재시도 */
-async function editWithRetry(params: Parameters<typeof openai.images.edit>[0]) {
-  try { return await openai.images.edit(params); }
-  catch { await new Promise(r => setTimeout(r, 3000)); return await openai.images.edit(params); }
+async function editWithRetry(params: Parameters<typeof openai.images.edit>[0]): Promise<ImageResult> {
+  try { return await openai.images.edit(params) as ImageResult; }
+  catch { await new Promise(r => setTimeout(r, 3000)); return await openai.images.edit(params) as ImageResult; }
 }
 
 /** 배경 제거 → Storage 업로드 → DB 저장 */
@@ -76,7 +79,7 @@ Warm gentle colors. Rounded cute proportions. Studio Ghibli meets Pokemon feel.
 ${colorText} ${traitText}
 White background. No text. Single character only.`;
 
-    console.log(`[generate-character] 시작: ${combo.first}+${combo.second}`);
+    console.log(`[generate-character] 시작: ${combo[0]}+${combo[1] || ''}`);
 
     /* ══ 1단계: baby illust + final illust 병렬 ══ */
     console.log(`[generate-character] 1단계: 일러스트 2장 생성...`);
@@ -122,16 +125,16 @@ White background. No text.`,
     const idleB64 = idleRes.data[0].b64_json as string;
     await saveImage(idleB64, userId, characterId, 'baby', 'pixel_idle', 235);
 
-    console.log(`[generate-character] 3단계: pixel_idle → 프레임 생성...`);
+    console.log(`[generate-character] 3단계: pixel_idle → 바운스 프레임 생성...`);
 
-    /* ══ 3단계: pixel_idle 참조 → walk1, walk2, blink, happy ══ */
+    /* ══ 3단계: pixel_idle 참조 → bounce1~4 (폴짝폴짝 뛰는 애니메이션) ══ */
     const idleBuffer = Buffer.from(idleB64, 'base64');
 
     const frames = [
-      { type: 'pixel_walk1', prompt: 'Edit this pixel art sprite: change to walking pose frame 1 — left foot forward, slight lean. Keep same character, same colors, same pixel style. White background.' },
-      { type: 'pixel_walk2', prompt: 'Edit this pixel art sprite: change to walking pose frame 2 — right foot forward, opposite lean. Keep same character, same colors, same pixel style. White background.' },
-      { type: 'pixel_blink', prompt: 'Edit this pixel art sprite: change only the eyes to closed (blinking). Everything else stays exactly the same. White background.' },
-      { type: 'pixel_happy', prompt: 'Edit this pixel art sprite: change to happy expression — eyes squinting with joy, slight bounce up, tiny sparkles. Keep same character and colors. White background.' },
+      { type: 'pixel_bounce1', prompt: 'Edit this pixel art sprite: squash the character down slightly — crouching, preparing to jump. Body compressed shorter and wider. Keep same character, same colors, same pixel style. White background.' },
+      { type: 'pixel_bounce2', prompt: 'Edit this pixel art sprite: character is jumping up in the air — legs tucked under body, stretched upward. Keep same character, same colors, same pixel style. White background.' },
+      { type: 'pixel_bounce3', prompt: 'Edit this pixel art sprite: character at the peak of a jump — body slightly stretched vertically, floating at highest point. Keep same character, same colors, same pixel style. White background.' },
+      { type: 'pixel_bounce4', prompt: 'Edit this pixel art sprite: character landing from a jump — body squashed down on impact, slightly wider. Keep same character, same colors, same pixel style. White background.' },
     ];
 
     for (const frame of frames) {

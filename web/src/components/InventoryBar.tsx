@@ -199,10 +199,10 @@ export default function InventoryBar({
         </div>
       )}
 
-      {/* 부화 이름짓기 모달 — 스테이지 위 오버레이 */}
+      {/* 부화 이름짓기 모달 — fixed로 전체 화면 중앙 오버레이 */}
       {showNaming && (
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
+          position: 'fixed', inset: 0, zIndex: 100,
           background: 'var(--backdrop-modal)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 'var(--s-4)',

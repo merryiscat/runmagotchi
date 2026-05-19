@@ -114,7 +114,7 @@ White background. No text, no face, no limbs. Just the egg.`;
     // ── 배경 제거 + 결과 조합 ──
     // 알 이미지는 몸통이 밝으므로 threshold 높게 (248: 거의 순백만 제거)
     const eggs = await Promise.all(results.map(async (res, i) => ({
-      image: await removeWhiteBg(res.data[0].b64_json as string, 248),
+      image: await removeWhiteBg((res as any).data[0].b64_json as string, 248),
       combo: combos[i],       // string[] (동물 이름 배열)
       pattern: patterns[i],
       colors: colorSets[i],

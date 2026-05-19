@@ -147,6 +147,7 @@ export default function ZoomableStage({ children }: Props) {
         transformOrigin: 'center center',
         transition: dragging.current ? 'none' : 'transform 0.1s ease-out',
         width: '100%', height: '100%',
+        position: 'relative',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {children}

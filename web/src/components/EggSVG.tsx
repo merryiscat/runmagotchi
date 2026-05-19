@@ -20,7 +20,7 @@ const POSITIONS = [
 ];
 
 /** 무늬별 도형 렌더 함수. 각 도형은 (cx, cy) 중심, fill 색상을 받음 */
-const PATTERN_RENDERERS: Record<string, (cx: number, cy: number, fill: string, i: number) => JSX.Element> = {
+const PATTERN_RENDERERS: Record<string, (cx: number, cy: number, fill: string, i: number) => React.JSX.Element> = {
   /* 01 물방울 */ '01': (cx, cy, fill, i) => <circle key={i} cx={cx} cy={cy} r={8} fill={fill} />,
   /* 02 별 */     '02': (cx, cy, fill, i) => <polygon key={i} points={star(cx, cy, 9, 4)} fill={fill} />,
   /* 03 물결 */   '03': (cx, cy, fill, i) => <ellipse key={i} cx={cx} cy={cy} rx={10} ry={5} fill={fill} />,

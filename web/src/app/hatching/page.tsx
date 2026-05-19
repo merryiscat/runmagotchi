@@ -136,46 +136,47 @@ export default function HatchingPage() {
           )}
         </div>
 
-        {/* 이름 짓기 팝업 */}
-        {phase === 'naming' && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 'var(--s-4)', zIndex: 10,
-          }}>
-            <div style={{
-              background: 'var(--surface)', border: '1px solid var(--ink-strong)',
-              padding: 'var(--s-5)', width: '100%', maxWidth: 320,
-              display: 'flex', flexDirection: 'column', gap: 'var(--s-3)',
-            }}>
-              <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700 }}>이름 짓기</div>
-              {gender && (
-                <div style={{ textAlign: 'center', fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)' }}>
-                  {gender}
-                </div>
-              )}
-              <input
-                type="text" maxLength={12} placeholder="2~12자"
-                value={characterName}
-                onChange={e => setCharacterName(e.target.value)}
-                className="input"
-              />
-              <div className="text-xs text-muted">변경 불가 · 한글·영문·숫자</div>
-              <button
-                className="btn btn--primary btn--full"
-                onClick={handleNameConfirm}
-                disabled={characterName.length < 2 || saving}
-              >
-                {saving ? '저장 중...' : '확정'}
-              </button>
-              {message && (
-                <div className="text-xs" style={{ color: 'var(--jeok)', textAlign: 'center' }}>{message}</div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* 이름 짓기 팝업 — 최상위에서 fixed 오버레이 */}
+      {phase === 'naming' && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 'var(--s-4)', zIndex: 100,
+        }}>
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--ink-strong)',
+            padding: 'var(--s-5)', width: '100%', maxWidth: 320,
+            display: 'flex', flexDirection: 'column', gap: 'var(--s-3)',
+          }}>
+            <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700 }}>이름 짓기</div>
+            {gender && (
+              <div style={{ textAlign: 'center', fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)' }}>
+                {gender}
+              </div>
+            )}
+            <input
+              type="text" maxLength={12} placeholder="2~12자"
+              value={characterName}
+              onChange={e => setCharacterName(e.target.value)}
+              className="input"
+            />
+            <div className="text-xs text-muted">변경 불가 · 한글·영문·숫자</div>
+            <button
+              className="btn btn--primary btn--full"
+              onClick={handleNameConfirm}
+              disabled={characterName.length < 2 || saving}
+            >
+              {saving ? '저장 중...' : '확정'}
+            </button>
+            {message && (
+              <div className="text-xs" style={{ color: 'var(--jeok)', textAlign: 'center' }}>{message}</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 애니메이션 CSS */}
       <style>{`
