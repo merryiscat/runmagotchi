@@ -1,155 +1,429 @@
 /**
- * 업로드 페이지 (U1)
+ * 업로드 페이지 (U1) — 스크린샷 전용
  *
- * 런닝 기록 수동 입력 → 토큰 계산 → runs 테이블 저장 → 캐릭터에 토큰 적립 → 대시보드로 이동.
- * 토큰 공식: km × 10 (기본). 추후 빈도/다양성 보너스 추가 예정.
- * VLM 파싱은 이후 구현. 현재는 거리/시간/페이스/날짜 직접 입력.
+ * 런닝 앱 스크린샷을 올리면:
+ *   1. SHA-256 해시로 중복 체크 (Gate A)
+ *   2. gpt-4.1 vision으로 자동 파싱
+ *   3. 결과 프리뷰 (수정 가능)
+ *   4. 확정 시 Gate B/C 검증 → Storage 저장 → DB INSERT
+ *
+ * 수동 입력은 지원하지 않음 — 부정 방지를 위해 스크린샷 필수.
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { hashImage } from '@/lib/hash-image';
+
+/* ─── 타입 ─── */
+
+/** VLM 파싱 결과 */
+interface ParseResult {
+  distance_km: number;
+  duration_minutes: number;
+  pace: string | null;
+  run_date: string | null;
+  app_name: string;
+  confidence: number;
+}
+
+/** Gate C 경고 */
+interface Warning {
+  rule: string;
+  message: string;
+}
+
+/** 페이지 진행 단계 */
+type Step = 'select' | 'analyzing' | 'preview' | 'saving' | 'gate-c';
+
+/* ─── 컴포넌트 ─── */
 
 export default function UploadPage() {
-  // 입력 폼 상태
-  const [km, setKm] = useState('');
-  const [minutes, setMinutes] = useState('');
-  const [pace, setPace] = useState('');
-  const [runDate, setRunDate] = useState(new Date().toISOString().split('T')[0]);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  /* 상태 */
+  const [step, setStep] = useState<Step>('select');
+  const [error, setError] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageHash, setImageHash] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
+  const [parsed, setParsed] = useState<ParseResult | null>(null);
+  const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [result, setResult] = useState<{ tokens_earned: number } | null>(null);
 
+  /* 수정 가능한 필드 */
+  const [editKm, setEditKm] = useState('');
+  const [editMin, setEditMin] = useState('');
+  const [editPace, setEditPace] = useState('');
+  const [editDate, setEditDate] = useState('');
+
+  const fileRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  /** 확정 버튼 클릭 → 토큰 계산 + 저장 + 대시보드 이동 */
-  async function handleConfirm() {
-    if (!km || !minutes) { setMessage('거리와 시간을 입력해주세요'); return; }
-    setSaving(true);
-    setMessage('');
+  /* ── 이미지 선택 → Gate A + VLM 파싱 ── */
 
-    // 로그인 확인
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setMessage('로그인 필요'); setSaving(false); return; }
+  const handleFile = useCallback(async (file: File) => {
+    setError('');
+    setStep('analyzing');
 
-    // 활성 캐릭터 조회 (토큰 잔액도 함께, 여러 개 있어도 안전)
-    const { data: chars } = await supabase
-      .from('characters')
-      .select('id, tokens')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    const character = chars?.[0] ?? null;
+    try {
+      /* 로그인 확인 */
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('로그인 필요'); setStep('select'); return; }
 
-    if (!character) { setMessage('캐릭터가 없습니다'); setSaving(false); return; }
+      /* 이미지 프리뷰 생성 */
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
 
-    // 토큰 계산: km × 10 (기본 공식)
-    const distanceKm = parseFloat(km);
-    const tokensEarned = Math.round(distanceKm * 10);
+      /* SHA-256 해시 계산 */
+      const hash = await hashImage(file);
+      setImageHash(hash);
 
-    // runs 테이블에 기록 저장
-    const { error: runError } = await supabase.from('runs').insert({
-      user_id: user.id,
-      character_id: character.id,
-      distance_km: distanceKm,
-      duration_minutes: parseInt(minutes),
-      pace: pace || null,
-      run_date: runDate,
-      tokens_earned: tokensEarned,
-    });
+      /* Gate A: 해시 중복 체크 */
+      const hashRes = await fetch('/api/upload-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'check-hash', user_id: user.id, image_hash: hash }),
+      });
+      const hashData = await hashRes.json();
 
-    if (runError) { setMessage(`저장 실패: ${runError.message}`); setSaving(false); return; }
+      if (hashData.duplicate) {
+        setError('이미 등록된 스크린샷');
+        setStep('select');
+        return;
+      }
 
-    // 캐릭터에 토큰 적립
-    const newTokens = (character.tokens || 0) + tokensEarned;
-    const { error: tokenError } = await supabase
-      .from('characters')
-      .update({ tokens: newTokens })
-      .eq('id', character.id);
+      /* 이미지 → base64 */
+      const buffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      setImageBase64(base64);
 
-    if (tokenError) { setMessage(`토큰 적립 실패: ${tokenError.message}`); setSaving(false); return; }
+      /* VLM 파싱 */
+      const parseRes = await fetch('/api/upload-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'parse', image_base64: base64 }),
+      });
+      const parseData = await parseRes.json();
 
-    // 항상 대시보드로 이동
-    window.location.href = '/dashboard';
-  }
+      if (parseData.error) {
+        setError(parseData.error);
+        setStep('select');
+        return;
+      }
 
-  // 인풋 공통 스타일
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: 'var(--s-3)',
-    border: '1px solid var(--line)', background: 'var(--surface)',
-    fontSize: 'var(--fs-md)', fontFamily: 'inherit',
-  };
+      const p: ParseResult = parseData.parsed;
 
+      /* confidence 체크 */
+      if (p.confidence < 0.5) {
+        setError('런닝 스크린샷을 인식할 수 없음. 다른 사진을 올려주세요');
+        setStep('select');
+        return;
+      }
+
+      /* 파싱 결과를 수정 가능 필드에 세팅 */
+      setParsed(p);
+      setEditKm(p.distance_km.toFixed(2));
+      setEditMin(String(p.duration_minutes));
+      setEditPace(p.pace || '');
+      setEditDate(p.run_date || new Date().toISOString().split('T')[0]);
+      setStep('preview');
+
+    } catch (err: any) {
+      setError(err.message || '분석 실패');
+      setStep('select');
+    }
+  }, [supabase]);
+
+  /* ── 드래그 앤 드롭 핸들러 ── */
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file);
+  }, [handleFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  /* ── 확정 → Gate B/C + 저장 ── */
+
+  const handleConfirm = useCallback(async (confirmed = false) => {
+    setStep('saving');
+    setError('');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('로그인 필요'); setStep('preview'); return; }
+
+      /* 활성 캐릭터 조회 */
+      const { data: chars } = await supabase
+        .from('characters')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const character = chars?.[0];
+      if (!character) { setError('캐릭터 없음'); setStep('preview'); return; }
+
+      /* 서버로 확정 요청 */
+      const res = await fetch('/api/upload-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          step: 'confirm',
+          user_id: user.id,
+          character_id: character.id,
+          image_hash: imageHash,
+          image_base64: imageBase64,
+          confirmed,
+          run: {
+            distance_km: parseFloat(editKm),
+            duration_minutes: parseInt(editMin, 10),
+            pace: editPace || null,
+            run_date: editDate,
+          },
+        }),
+      });
+
+      const data = await res.json();
+
+      /* Gate B 거부 */
+      if (data.gate === 'B') {
+        setError(data.error);
+        setStep('preview');
+        return;
+      }
+
+      /* Gate C 경고 → 확인 팝업 */
+      if (data.gate === 'C' && data.warnings) {
+        setWarnings(data.warnings);
+        setStep('gate-c');
+        return;
+      }
+
+      /* 에러 */
+      if (data.error) {
+        setError(data.error);
+        setStep('preview');
+        return;
+      }
+
+      /* 성공 */
+      setResult(data);
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
+
+    } catch (err: any) {
+      setError(err.message || '저장 실패');
+      setStep('preview');
+    }
+  }, [supabase, imageHash, imageBase64, editKm, editMin, editPace, editDate]);
+
+  /* ── 코인 미리보기 ── */
+  const previewTokens = editKm ? Math.round(parseFloat(editKm) * 10) : 0;
+
+  /* ─── 렌더링 ─── */
   return (
     <div className="frame frame--web" style={{ minHeight: '100vh', maxWidth: 'none' }}>
       <div style={{ padding: 'var(--s-5)', maxWidth: 720, margin: '0 auto', width: '100%' }}>
 
         {/* 상단바 */}
         <div className="topbar">
-          <a href="/dashboard" style={{ textDecoration: 'none', color: 'var(--ink-strong)' }}>← 돌아가기</a>
+          <a href="/dashboard" style={{ textDecoration: 'none', color: 'var(--ink-strong)' }}>
+            ← 돌아가기
+          </a>
           <span className="topbar__title">업로드</span>
           <span style={{ width: 60 }} />
         </div>
 
-        {/* 입력 폼 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
-
-          <div className="field">
-            <div className="field__label">거리 (km)</div>
-            <input type="number" step="0.1" placeholder="5.2" value={km}
-              onChange={e => setKm(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div className="field">
-            <div className="field__label">시간 (분)</div>
-            <input type="number" placeholder="28" value={minutes}
-              onChange={e => setMinutes(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div className="field">
-            <div className="field__label">페이스 (/km)</div>
-            <input type="text" placeholder="05:32" value={pace}
-              onChange={e => setPace(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div className="field">
-            <div className="field__label">날짜</div>
-            <input type="date" value={runDate}
-              onChange={e => setRunDate(e.target.value)} style={inputStyle} />
-          </div>
-
-          {/* 토큰 미리보기: 입력한 거리 기반 */}
-          {km && parseFloat(km) > 0 && (
-            <div style={{
-              padding: 'var(--s-3) var(--s-4)',
-              background: 'var(--clay-soft)',
-              border: '1px solid var(--line-soft)',
-              fontSize: 'var(--fs-sm)',
-              display: 'flex', justifyContent: 'space-between',
-            }}>
-              <span style={{ color: 'var(--ink-muted)' }}>획득 코인</span>
-              <span style={{ fontWeight: 700 }}>🪙 {Math.round(parseFloat(km) * 10)}</span>
+        {/* ── Step 1: 사진 선택 ── */}
+        {step === 'select' && (
+          <>
+            <div
+              className="dropzone"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => fileRef.current?.click()}
+            >
+              <div className="dropzone-icon">↑</div>
+              <div className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+                런닝 스크린샷을 드래그하거나 클릭해서 선택
+              </div>
+              <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                Strava · 나이키런 · 삼성헬스 · Garmin
+              </div>
             </div>
-          )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+            />
+          </>
+        )}
 
-          <div className="text-xs text-muted">확정 후 수정·삭제 불가</div>
-
-          <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
-            <a href="/dashboard" className="btn" style={{ flex: 1, textAlign: 'center' }}>취소</a>
-            <button className="btn btn--primary" style={{ flex: 2 }}
-              onClick={handleConfirm} disabled={saving}>
-              {saving ? '저장 중...' : '확정'}
-            </button>
+        {/* ── Step 2: 분석 중 ── */}
+        {step === 'analyzing' && (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 'var(--s-4)', padding: 'var(--s-7) 0',
+          }}>
+            {/* 이미지 썸네일 */}
+            {imagePreview && (
+              <img src={imagePreview} alt="업로드 이미지"
+                style={{ maxWidth: 200, maxHeight: 300, border: '1px solid var(--line)', objectFit: 'contain' }} />
+            )}
+            <div className="text-sm" style={{ color: 'var(--ink-muted)' }}>분석 중...</div>
+            <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>최대 7초</div>
           </div>
-        </div>
+        )}
 
-        {/* 에러/성공 메시지 */}
-        {message && (
-          <p style={{ marginTop: 'var(--s-4)', fontSize: 'var(--fs-sm)', textAlign: 'center',
-            color: message.includes('실패') ? 'var(--jeok)' : 'var(--ink-muted)' }}>
-            {message}
-          </p>
+        {/* ── Step 3: 결과 프리뷰 ── */}
+        {step === 'preview' && parsed && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
+
+            {/* 이미지 + 앱 인식 결과 */}
+            <div style={{ display: 'flex', gap: 'var(--s-4)', alignItems: 'flex-start' }}>
+              {imagePreview && (
+                <img src={imagePreview} alt="스크린샷"
+                  style={{ width: 100, height: 140, objectFit: 'cover', border: '1px solid var(--line)', flexShrink: 0 }} />
+              )}
+              <div style={{ flex: 1 }}>
+                <div className="text-xs text-muted" style={{ marginBottom: 'var(--s-2)' }}>
+                  인식 앱: {parsed.app_name}
+                  {parsed.confidence < 0.7 && ' · 인식이 불확실합니다. 확인 후 수정해주세요'}
+                </div>
+                {/* 수정 가능 필드 */}
+                <div className="field">
+                  <div className="field__label">거리 (km)</div>
+                  <input className="input" type="number" step="0.01"
+                    value={editKm} onChange={e => setEditKm(e.target.value)} />
+                </div>
+                <div className="field">
+                  <div className="field__label">시간 (분)</div>
+                  <input className="input" type="number"
+                    value={editMin} onChange={e => setEditMin(e.target.value)} />
+                </div>
+                <div className="field">
+                  <div className="field__label">페이스 (/km)</div>
+                  <input className="input" type="text" placeholder="05:32"
+                    value={editPace} onChange={e => setEditPace(e.target.value)} />
+                </div>
+                <div className="field">
+                  <div className="field__label">날짜</div>
+                  <input className="input" type="date"
+                    value={editDate} onChange={e => setEditDate(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* 코인 미리보기 */}
+            {previewTokens > 0 && (
+              <div style={{
+                padding: 'var(--s-3) var(--s-4)', background: 'var(--clay-soft)',
+                border: '1px solid var(--line-soft)', fontSize: 'var(--fs-sm)',
+                display: 'flex', justifyContent: 'space-between',
+                fontFamily: 'var(--font-handwriting)',
+              }}>
+                <span style={{ color: 'var(--ink-muted)' }}>획득 코인</span>
+                <span style={{ fontWeight: 700 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 14, height: 14, borderRadius: '50%',
+                    background: 'var(--hwang)', color: 'var(--on-hwang)',
+                    fontSize: 9, fontWeight: 900, fontFamily: 'serif', lineHeight: 1,
+                    marginRight: 4,
+                  }}>₩</span>
+                  {previewTokens}
+                </span>
+              </div>
+            )}
+
+            <div className="text-xs text-muted">확정 후 수정·삭제 불가</div>
+
+            <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
+              <button className="btn" style={{ flex: 1 }}
+                onClick={() => { setStep('select'); setParsed(null); setError(''); }}>
+                다시 선택
+              </button>
+              <button className="btn btn--primary" style={{ flex: 2 }}
+                onClick={() => handleConfirm()}>
+                확정
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step: 저장 중 ── */}
+        {step === 'saving' && (
+          <div style={{ textAlign: 'center', padding: 'var(--s-7) 0' }}>
+            <div className="text-sm text-muted">저장 중...</div>
+          </div>
+        )}
+
+        {/* ── Step: Gate C 확인 팝업 ── */}
+        {step === 'gate-c' && (
+          <div style={{
+            padding: 'var(--s-5)', border: '2px solid var(--line-strong)',
+            background: 'var(--surface)',
+          }}>
+            <div className="fw-bold mb-3" style={{ fontSize: 'var(--fs-lg)' }}>
+              이 기록이 맞나요?
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)', marginBottom: 'var(--s-4)' }}>
+              {warnings.map(w => (
+                <div key={w.rule} style={{
+                  padding: 'var(--s-2) var(--s-3)',
+                  background: 'var(--clay-soft)',
+                  border: '1px solid var(--line)',
+                  fontSize: 'var(--fs-sm)',
+                }}>
+                  {w.message}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
+              <button className="btn" style={{ flex: 1 }}
+                onClick={() => { setStep('preview'); setWarnings([]); }}>
+                취소
+              </button>
+              <button className="btn btn--primary" style={{ flex: 2 }}
+                onClick={() => handleConfirm(true)}>
+                맞아요
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 에러 메시지 */}
+        {error && (
+          <div style={{
+            marginTop: 'var(--s-4)', padding: 'var(--s-3) var(--s-4)',
+            border: '2px solid var(--jeok)', background: 'var(--surface)',
+            fontSize: 'var(--fs-sm)', color: 'var(--jeok)', textAlign: 'center',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* 성공 메시지 */}
+        {result && (
+          <div style={{
+            marginTop: 'var(--s-4)', padding: 'var(--s-3) var(--s-4)',
+            border: '2px solid var(--cheong)', background: 'var(--surface)',
+            fontSize: 'var(--fs-sm)', textAlign: 'center',
+            fontFamily: 'var(--font-handwriting)',
+          }}>
+            +{result.tokens_earned} 코인 획득
+          </div>
         )}
       </div>
     </div>
