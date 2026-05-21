@@ -53,14 +53,14 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  /* 폰트 크기 */
-  --fs-xs:  12px;
-  --fs-sm:  14px;
-  --fs-md:  16px;
-  --fs-lg:  20px;
-  --fs-xl:  24px;
-  --fs-2xl: 32px;
-  --fs-3xl: 40px;
+  /* 폰트 크기 — 전체적으로 약간 키움 */
+  --fs-xs:  13px;
+  --fs-sm:  15px;
+  --fs-md:  17px;
+  --fs-lg:  22px;
+  --fs-xl:  26px;
+  --fs-2xl: 34px;
+  --fs-3xl: 42px;
 
   /* 모달 배경 */
   --backdrop-modal: rgba(0, 0, 0, 0.4);
@@ -102,6 +102,11 @@
   --font-sans: var(--font-noto), -apple-system, BlinkMacSystemFont,
     "Noto Sans KR", "Apple SD Gothic Neo", "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* 손글씨 폰트 — 상점 장부 등 감성 UI에 사용 */
+  --font-handwriting: var(--font-hand), "Gaegu", "Nanum Pen Script", cursive;
+  --font-penscript: var(--font-pen), "Nanum Pen Script", cursive;
+  --font-myeongjo: var(--font-serif), "Nanum Myeongjo", serif;
 }
 
 /* ─── 기본 스타일 ────────────────────────────────────────── */
@@ -142,10 +147,10 @@ body {
 .panel__section { padding: var(--s-5); border-bottom: 1px solid var(--line); }
 .panel__section:last-child { border-bottom: none; }
 
-/* Stats */
+/* Stats — 숫자는 손글씨 폰트로 따뜻한 느낌 */
 .stats-row { display: flex; gap: var(--s-4); text-align: center; }
 .stats-row > div { flex: 1; }
-.stat-v { font-size: var(--fs-xl); font-weight: 700; }
+.stat-v { font-size: var(--fs-xl); font-weight: 700; font-family: var(--font-handwriting); }
 .stat-l { font-size: var(--fs-xs); color: var(--ink-muted); }
 
 /* Period select */
