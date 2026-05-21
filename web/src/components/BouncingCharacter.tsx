@@ -17,12 +17,20 @@ import { createClient } from '@/lib/supabase/client';
 /** 프레임 표시 시간 (ms) — 느리게 */
 const FRAME_DURATION = 300;
 
-/** 폴짝 한 사이클 후 대기 (ms) — 넉넉히 */
-const HOP_PAUSE_MIN = 1500;
-const HOP_PAUSE_MAX = 3500;
-
 /** 점프 높이 (px) — 작게 */
 const HOP_HEIGHT = 12;
+
+/** 기분(mood)별 움직임 설정 */
+const MOOD_CONFIG = {
+  /* happy: 기본 — 활발하게 돌아다님 */
+  happy:   { pauseMin: 1500, pauseMax: 3500, moveRange: 120, hopScale: 1.0 },
+  /* neutral: 느긋 — 움직임이 느려지고 점프가 작아짐 */
+  neutral: { pauseMin: 3000, pauseMax: 6000, moveRange: 80,  hopScale: 0.7 },
+  /* sad: 우울 — 거의 안 움직이고 점프도 미미 */
+  sad:     { pauseMin: 6000, pauseMax: 10000, moveRange: 30, hopScale: 0.3 },
+} as const;
+
+export type Mood = keyof typeof MOOD_CONFIG;
 
 /** 캐릭터 크기 (px) */
 const CHAR_SIZE = 120;
@@ -30,12 +38,28 @@ const CHAR_SIZE = 120;
 /** 캐릭터 안쪽 여백 (잘림 방지) */
 const PADDING = 80;
 
+/** 음식 위치 — FeedingStage에서 전달 */
+export interface FoodTarget {
+  uid: string;
+  x: number;
+  y: number;
+}
+
 interface Props {
   characterId: string;
   idleUrl?: string;
+  /** 캐릭터 기분 — 배고픔/애정 스탯에 따라 결정 */
+  mood?: Mood;
+  /** 먹으러 갈 음식 좌표 (null이면 자유 이동) */
+  foodTarget?: FoodTarget | null;
+  /** 음식 위치에 도착했을 때 호출 */
+  onReachFood?: (uid: string) => void;
 }
 
-export default function BouncingCharacter({ characterId, idleUrl }: Props) {
+export default function BouncingCharacter({
+  characterId, idleUrl, mood = 'happy',
+  foodTarget = null, onReachFood,
+}: Props) {
   const [frames, setFrames] = useState<string[]>([]);
   const [frameIdx, setFrameIdx] = useState(0);
 
@@ -48,7 +72,7 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const frameTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const initialized = useRef(false);
+  const initializedRef = useRef(false);
 
   const supabase = createClient();
 
@@ -90,14 +114,14 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
   /* ─── 초기 위치: 컨테이너 중앙 ─────────────────────── */
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (initializedRef.current) return;
     const el = containerRef.current;
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
     setPosX((rect.width - CHAR_SIZE) / 2);
     setPosY((rect.height - CHAR_SIZE) / 2);
-    initialized.current = true;
+    initializedRef.current = true;
   }, [frames]);
 
   /* ─── 폴짝 루프 ────────────────────────────────────── */
@@ -106,14 +130,40 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
     const el = containerRef.current;
     if (!el || frames.length <= 1) return;
 
+    const cfg = MOOD_CONFIG[mood];
     const rect = el.getBoundingClientRect();
     const maxX = rect.width - CHAR_SIZE - PADDING;
     const maxY = rect.height - CHAR_SIZE - PADDING;
 
-    // 다음 위치: 현재 위치에서 적당히 이동 (스테이지 전체 범위)
-    const moveRange = 120;
-    let nextX = posX + (Math.random() - 0.5) * moveRange * 2;
-    let nextY = posY + (Math.random() - 0.5) * moveRange;
+    let nextX: number;
+    let nextY: number;
+
+    if (foodTarget) {
+      /* 음식이 있으면 그 방향으로 한 홉씩 다가감 */
+      const targetX = foodTarget.x - CHAR_SIZE / 2;
+      const targetY = foodTarget.y - CHAR_SIZE / 2;
+      const dx = targetX - posX;
+      const dy = targetY - posY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 50) {
+        /* 음식에 도착 → 콜백 호출 */
+        onReachFood?.(foodTarget.uid);
+        nextX = posX;
+        nextY = posY;
+      } else {
+        /* 한 홉에 최대 80px씩 다가감 */
+        const hopDist = Math.min(80, dist);
+        const ratio = hopDist / dist;
+        nextX = posX + dx * ratio;
+        nextY = posY + dy * ratio;
+      }
+    } else {
+      /* 자유 이동: 기분에 따라 이동 범위 조절 */
+      const moveRange = cfg.moveRange;
+      nextX = posX + (Math.random() - 0.5) * moveRange * 2;
+      nextY = posY + (Math.random() - 0.5) * moveRange;
+    }
 
     // 범위 제한
     nextX = Math.max(PADDING, Math.min(maxX, nextX));
@@ -123,10 +173,12 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
     setFacingRight(goingRight);
 
     // 프레임 시퀀스: 웅크림 → 점프 → 최고점 → 착지 → idle
+    // 기분에 따라 점프 높이 조절
+    const hopH = HOP_HEIGHT * cfg.hopScale;
     const seq = [
       { frame: 1, hy: 2 },
-      { frame: 2, hy: -HOP_HEIGHT * 0.6 },
-      { frame: 3, hy: -HOP_HEIGHT },
+      { frame: 2, hy: -hopH * 0.6 },
+      { frame: 3, hy: -hopH },
       { frame: 4, hy: 2 },
       { frame: 0, hy: 0 },
     ];
@@ -135,8 +187,10 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
     const stepInterval = setInterval(() => {
       if (step >= seq.length) {
         clearInterval(stepInterval);
-        // 다음 폴짝까지 랜덤 대기
-        const pause = HOP_PAUSE_MIN + Math.random() * (HOP_PAUSE_MAX - HOP_PAUSE_MIN);
+        // 다음 폴짝까지 대기 — 음식이 있으면 빨리 다가감
+        const pause = foodTarget
+          ? 300 + Math.random() * 200
+          : cfg.pauseMin + Math.random() * (cfg.pauseMax - cfg.pauseMin);
         hopTimer.current = setTimeout(doHop, pause);
         return;
       }
@@ -154,7 +208,7 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
     }, FRAME_DURATION);
 
     frameTimer.current = stepInterval as unknown as ReturnType<typeof setInterval>;
-  }, [frames, posX, posY]);
+  }, [frames, posX, posY, mood, foodTarget, onReachFood]);
 
   useEffect(() => {
     if (frames.length <= 1) return;
@@ -170,7 +224,10 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
 
   /* ─── 렌더링 ───────────────────────────────────────── */
 
-  if (frames.length === 0) return null;
+  if (frames.length === 0) return (
+    <div ref={containerRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+  );
+
   const currentSrc = frames[frameIdx] || frames[0];
 
   return (
@@ -195,7 +252,12 @@ export default function BouncingCharacter({ characterId, idleUrl }: Props) {
           top: posY,
           transform: `translateY(${hopY}px)`,
           scale: `${facingRight ? 1 : -1} 1`,
-          transition: `left 0.8s ease-in-out, top 0.8s ease-in-out, transform ${FRAME_DURATION}ms ease-out`,
+          /* 초기화 전(0,0)에는 transition 없이 바로 배치, 이후에만 부드러운 이동 */
+          transition: initializedRef.current
+            ? `left 0.8s ease-in-out, top 0.8s ease-in-out, transform ${FRAME_DURATION}ms ease-out`
+            : 'none',
+          /* 초기화 전에는 숨김 */
+          opacity: initializedRef.current ? 1 : 0,
         }}
       />
     </div>
