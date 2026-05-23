@@ -31,43 +31,19 @@ interface ItemDef {
 }
 
 const ITEM_DEFS: ItemDef[] = [
-  { id: 'feed', name: '먹이', hungerGain: 30, affectionGain: 0,  expGain: 10, icon: '/icons/feed-1.png',  eggAllowed: false },
-  { id: 'love', name: '애정', hungerGain: 0,  affectionGain: 40, expGain: 50, icon: '/icons/love-1.png',  eggAllowed: true  },
+  { id: 'feed',  name: '먹이',       hungerGain: 30, affectionGain: 0,  expGain: 10, icon: '/icons/feed-1.png',  eggAllowed: false },
+  { id: 'love',  name: '애정',       hungerGain: 0,  affectionGain: 40, expGain: 10, icon: '/icons/love-1.png',  eggAllowed: false },
+  { id: 'candy', name: '경험치 사탕', hungerGain: 0,  affectionGain: 0,  expGain: 20, icon: '/icons/candy-1.png', eggAllowed: false },
 ];
 
-/* ─── 성장 계산 ──────────────────────────────────────────── */
+/* ─── 성장 계산 — behavior.ts에서 가져옴 ────────────────── */
 
-const LEVEL_THRESHOLDS: number[] = [0];
-(() => {
-  const targets = [500, 1500, 3500, 7000, 13000];
-  for (let stage = 0; stage < 5; stage++) {
-    const prev = stage === 0 ? 0 : targets[stage - 1];
-    const diff = targets[stage] - prev;
-    for (let i = 1; i <= 10; i++) {
-      LEVEL_THRESHOLDS.push(prev + Math.round((diff * i) / 10));
-    }
-  }
-})();
-
-function expToLevel(exp: number): number {
-  for (let lv = LEVEL_THRESHOLDS.length - 1; lv >= 1; lv--) {
-    if (exp >= LEVEL_THRESHOLDS[lv]) return lv;
-  }
-  return 0;
-}
-function levelToStage(level: number): string {
-  if (level <= 0) return 'egg';
-  if (level <= 10) return 'baby';
-  if (level <= 20) return 'child';
-  if (level <= 30) return 'teen';
-  if (level <= 40) return 'adult';
-  return 'final';
-}
-function stageLabel(s: string): string {
-  return { egg: '알', baby: '유아', child: '유년', teen: '초기체', adult: '중기체', final: '완전체' }[s] || s;
-}
-
-const HATCH_AFFECTION = 80;
+import {
+  expToLevel,
+  levelToStage,
+  stageLabel,
+  canUseItem,
+} from '@/lib/behavior';
 
 /* ─── Props ──────────────────────────────────────────────── */
 
@@ -121,10 +97,7 @@ export default function FeedingStage({
     uid: string; text: string; x: number; y: number; warn?: boolean;
   }>>([]);
 
-  /* 부화 이름짓기 */
-  const [showNaming, setShowNaming] = useState(false);
-  const [charName, setCharName] = useState('');
-  const [namingSaving, setNamingSaving] = useState(false);
+  /* 부화 이름짓기는 EggStage에서 처리 */
 
   const containerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -217,6 +190,19 @@ export default function FeedingStage({
     const item = ITEM_DEFS.find(d => d.id === itemId);
     if (!item) return;
 
+    /* 포만감 체크 — 배부르면 먹이 거부, 애정 충분하면 애정 거부 */
+    const check = canUseItem(itemId, hunger, affection);
+    if (!check.usable) {
+      /* 아이템 사용 불가 → 거부 메시지 + 인벤토리 복구 */
+      pushMsg(check.reason || '안 먹어요', x, y - 40, true);
+      /* 음식은 사라지지만 인벤토리에 아이템 돌려줌 */
+      const restored = { ...currentInv };
+      restored[itemId] = (restored[itemId] || 0) + 1;
+      setInventory(restored);
+      setFoods(prev => prev.filter(f => f.uid !== foodUid));
+      return;
+    }
+
     setFoods(prev => prev.map(f => f.uid === foodUid ? { ...f, status: 'eaten' } : f));
 
     const newHunger = Math.min(100, hunger + item.hungerGain);
@@ -228,6 +214,7 @@ export default function FeedingStage({
 
     if (item.hungerGain > 0) pushMsg('냠!', x, y - 40);
     if (item.affectionGain > 0) pushMsg('♥', x, y - 40);
+    if (itemId === 'candy') pushMsg('✦', x, y - 40);
 
     setHunger(newHunger);
     setAffection(newAffection);
@@ -251,31 +238,11 @@ export default function FeedingStage({
       setFoods(prev => prev.filter(f => f.uid !== foodUid));
     }, 400);
 
-    /* 부화 트리거 */
-    if (!hatched && newAffection >= HATCH_AFFECTION) {
-      pushMsg('부화 준비 완료!', x, y - 70);
-      setTimeout(() => setShowNaming(true), 800);
-      return;
-    }
-
     /* 진화 알림 */
     if (newStage !== oldStage && newStage !== 'egg') {
       pushMsg(`${stageLabel(newStage)}(으)로 진화!`, x, y - 60);
       setTimeout(() => window.location.reload(), 1500);
     }
-  }
-
-  /* ── 이름 확정 → 부화 ── */
-  async function handleNameConfirm() {
-    if (charName.length < 2) return;
-    setNamingSaving(true);
-    await supabase
-      .from('characters')
-      .update({ name: charName, hatched: true, stage: 'baby' })
-      .eq('id', characterId);
-    setHatched(true);
-    setShowNaming(false);
-    window.location.reload();
   }
 
   /* ── 캐릭터가 음식 위치에 도착하면 호출됨 (BouncingCharacter에서 콜백) ── */
@@ -452,37 +419,6 @@ export default function FeedingStage({
           {m.text}
         </div>
       ))}
-
-      {/* ═══ 부화 이름짓기 모달 ═══ */}
-      {showNaming && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: 'var(--backdrop-modal)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 'var(--s-4)',
-        }}>
-          <div style={{
-            background: 'var(--surface)', border: '1px solid var(--ink-strong)',
-            padding: 'var(--s-5)', width: '100%', maxWidth: 320,
-            display: 'flex', flexDirection: 'column', gap: 'var(--s-3)',
-          }}>
-            <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700 }}>이름 짓기</div>
-            <input
-              type="text" maxLength={12} placeholder="2~12자"
-              value={charName} onChange={e => setCharName(e.target.value)}
-              className="input" autoFocus
-            />
-            <div className="text-xs text-muted">변경 불가</div>
-            <button
-              className="btn btn--primary btn--full"
-              onClick={handleNameConfirm}
-              disabled={charName.length < 2 || namingSaving}
-            >
-              {namingSaving ? '저장 중...' : '확정'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ═══ 애니메이션 CSS ═══ */}
       <style>{`

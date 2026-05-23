@@ -15,6 +15,9 @@ export interface RunInput {
   duration_minutes: number; // 시간 (분)
   pace: string | null;      // "mm:ss" /km 형식
   run_date: string;         // "YYYY-MM-DD"
+  /* ── 캐릭터 진화 속성 ── */
+  time_of_day?: string;     // dawn/morning/afternoon/evening/night
+  route_type?: string;      // track/road/trail/treadmill/unknown
 }
 
 /** 과거 기록 요약 (Gate C에서 사용) */

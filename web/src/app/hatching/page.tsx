@@ -86,6 +86,9 @@ export default function HatchingPage() {
         <a href="/dashboard" className="gnb__logo">
           <img src="/logo.png" alt="Runmagotchi" style={{ height: 28 }} />
         </a>
+        <nav className="gnb__nav" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
+          <a href="/dashboard">대시보드</a>
+        </nav>
       </div>
 
       <div style={{

@@ -7,11 +7,13 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import GNB from '@/components/GNB';
 import RetryCharacter from '@/components/RetryCharacter';
 import IllustButton from '@/components/IllustButton';
-import type { Mood } from '@/components/BouncingCharacter';
 import ZoomableStage from '@/components/ZoomableStage';
 import StageWithFeeding from '@/components/StageWithFeeding';
+import EggStage from '@/components/EggStage';
+import { calcDecayDelta, clampStat } from '@/lib/behavior';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -38,18 +40,19 @@ export default async function DashboardPage() {
   if (!character) redirect('/egg-select');
 
   // ── 배고픔/애정 시간 감소 계산 ──
-  // stats_updated_at 이후 경과 시간(시간 단위) × 4 만큼 감소
+  // calcDecayDelta: 시간당 배고픔 -4, 애정 -2. 배고픔 < 20이면 애정 추가 -3
   const statsUpdatedAt = character.stats_updated_at
     ? new Date(character.stats_updated_at)
     : new Date();
   const hoursElapsed = Math.floor((Date.now() - statsUpdatedAt.getTime()) / (1000 * 60 * 60));
-  const decay = hoursElapsed * 4; // 시간당 4 감소
 
-  const currentHunger = Math.max(0, (character.hunger ?? 100) - decay);
-  const currentAffection = Math.max(0, (character.affection ?? 100) - decay);
+  const rawHunger = character.hunger ?? 100;
+  const decay = calcDecayDelta(hoursElapsed, rawHunger);
+  const currentHunger = clampStat(rawHunger + decay.hungerDelta);
+  const currentAffection = clampStat((character.affection ?? 100) + decay.affectionDelta);
 
   // 감소가 있었으면 DB 업데이트 (다음 접속 기준점 갱신)
-  if (decay > 0) {
+  if (hoursElapsed > 0) {
     await supabase
       .from('characters')
       .update({
@@ -59,11 +62,6 @@ export default async function DashboardPage() {
       })
       .eq('id', character.id);
   }
-
-  // 기분(mood) 결정: 배고픔/애정 기반
-  const mood: Mood =
-    (currentHunger >= 50 && currentAffection >= 50) ? 'happy' :
-    (currentHunger < 20 || currentAffection < 20) ? 'sad' : 'neutral';
 
   // 런닝 기록 조회
   const { data: runs } = await supabase
@@ -96,36 +94,7 @@ export default async function DashboardPage() {
   return (
     <div className="frame frame--web" style={{ minHeight: '100vh', maxWidth: 'none' }}>
 
-      {/* GNB */}
-      <div className="gnb">
-        <a href="/dashboard" className="gnb__logo">
-          <img src="/logo.png" alt="Runmagotchi" style={{ height: 28 }} />
-        </a>
-        <nav className="gnb__nav" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
-          {/* 코인 (클릭 불가, 표시만) — 손글씨 폰트 */}
-          <span style={{
-            fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--ink-default)',
-            fontFamily: 'var(--font-handwriting)',
-          }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 14, height: 14, borderRadius: '50%',
-              background: 'var(--hwang)', color: 'var(--on-hwang)',
-              fontSize: 9, fontWeight: 900, fontFamily: 'serif', lineHeight: 1,
-            }}>₩</span>{' '}{coins}
-          </span>
-          {/* 구분선 */}
-          <span style={{ width: 1, height: 14, background: 'var(--line-soft)' }} />
-          <a href="/shop">상점</a>
-          <a href="/profile">프로필</a>
-          <form action="/auth/signout" method="post" style={{ display: 'inline' }}>
-            <button type="submit" style={{
-              color: 'var(--ink-faint)', background: 'none', border: 'none',
-              cursor: 'pointer', fontFamily: 'inherit', fontSize: 'var(--fs-sm)',
-            }}>로그아웃</button>
-          </form>
-        </nav>
-      </div>
+      <GNB active="dashboard" coins={coins} />
 
       {/* m1-layout */}
       <div className="m1-layout" style={{ flex: 1 }}>
@@ -135,40 +104,58 @@ export default async function DashboardPage() {
           {/* 일러스트 보기 버튼 — 부화 후에만 표시 (알 상태는 스포일러) */}
           {character.hatched && illustImg?.url && <IllustButton url={illustImg.url} />}
 
-          {/* 스테이지 콘텐츠: 줌/패닝 가능 (알 + 캐릭터 모두 포함) */}
+          {/* 스테이지 콘텐츠 */}
           <div style={{ position: 'absolute', inset: 0 }}>
-            <ZoomableStage>
-              {!character.hatched && character.egg_image_url ? (
-                <div style={{ width: 220, maxWidth: '70%' }}>
-                  <img src={character.egg_image_url} alt="알"
-                    style={{ width: '100%', objectFit: 'contain', display: 'block' }} />
-                  {character.image_status === 'failed' && <RetryCharacter characterId={character.id} />}
+            {!character.hatched ? (
+              /* ── 알 상태: 터치로 부화 ── */
+              character.egg_image_url ? (
+                <EggStage
+                  characterId={character.id}
+                  eggImageUrl={character.egg_image_url}
+                  initialTouches={character.egg_touches || 0}
+                  initialAffection={currentAffection}
+                />
+              ) : character.image_status === 'failed' ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <RetryCharacter characterId={character.id} />
                 </div>
-              ) : !character.hatched && character.image_status === 'failed' ? (
-                <RetryCharacter characterId={character.id} />
-              ) : null}
-            </ZoomableStage>
+              ) : null
+            ) : (
+              /* ── 부화 후: 캐릭터 + 먹이주기 ── */
+              <>
+                <ZoomableStage>{null}</ZoomableStage>
+                <StageWithFeeding
+                  characterId={character.id}
+                  idleUrl={pixelImg?.url}
+                  inventory={character.inventory || {}}
+                  exp={character.total_exp || 0}
+                  level={character.level || 0}
+                  hunger={currentHunger}
+                  affection={currentAffection}
+                  hatched={true}
+                />
+              </>
+            )}
           </div>
-
-          {/* 캐릭터 + 먹이주기 통합 (클라이언트 컴포넌트) */}
-          <StageWithFeeding
-            characterId={character.id}
-            idleUrl={pixelImg?.url}
-            mood={mood}
-            inventory={character.inventory || {}}
-            exp={character.total_exp || 0}
-            level={character.level || 0}
-            hunger={currentHunger}
-            affection={currentAffection}
-            hatched={!!character.hatched}
-          />
 
           {/* 스테이지 하단: 이름 */}
           <div className="stage__footer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
             {character.hatched && character.name && (
               <div>
-                <div className="fw-bold text-sm" style={{ fontFamily: 'var(--font-penscript)', fontSize: 'var(--fs-lg)' }}>{character.name}</div>
-                <div className="text-xs text-muted">{character.gender}</div>
+                <div className="fw-bold text-sm" style={{
+                  fontFamily: 'var(--font-penscript)', fontSize: 'var(--fs-lg)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}>
+                  {character.name}
+                  {character.gender && (
+                    <span style={{
+                      fontSize: 'var(--fs-sm)',
+                      color: character.gender === '수컷' ? 'var(--cheong)' : 'var(--jeok)',
+                    }}>
+                      {character.gender === '수컷' ? '♂' : '♀'}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

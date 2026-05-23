@@ -7,7 +7,7 @@
  *
  * step별 동작:
  *   1. check-hash  — SHA-256 해시로 중복 스크린샷 차단 (Gate A)
- *   2. parse       — VLM(gpt-4.1 vision)으로 스크린샷 파싱
+ *   2. parse       — 메타데이터 검증 (Gate A 강화) + VLM(gpt-4.1 vision) 파싱
  *   3. confirm     — Gate B/C 검증 + Storage 저장 + DB INSERT + 토큰 적립
  */
 
@@ -23,6 +23,8 @@ import {
   type RunInput,
   type RunHistory,
 } from '@/lib/validate-run';
+import { validateImageMetadata } from '@/lib/validate-image';
+import { aggregateRunTraits } from '@/lib/run-traits';
 
 /* ─── 클라이언트 초기화 ─── */
 
@@ -39,14 +41,23 @@ const supabase = createClient(
 
 /* ─── VLM 파싱 Zod 스키마 ─── */
 
-/** VLM이 반환할 런닝 데이터 구조 */
+/** VLM이 반환할 런닝 데이터 구조 (기본 + 캐릭터 속성) */
 const RunParseSchema = z.object({
+  /* ── 기본 기록 ── */
   distance_km: z.number().describe('총 거리 (km, 소수점 2자리)'),
   duration_minutes: z.number().describe('총 시간 (분, 정수로 반올림)'),
   pace: z.string().nullable().describe('평균 페이스 (mm:ss/km 형식, 없으면 null)'),
   run_date: z.string().nullable().describe('런닝 날짜 (YYYY-MM-DD, 없으면 null)'),
   app_name: z.enum(['strava', 'nike', 'samsung', 'garmin', 'other']).describe('런닝 앱 이름'),
   confidence: z.number().describe('파싱 확신도 (0.0~1.0). 런닝 스크린샷이 아니면 0'),
+
+  /* ── 캐릭터 진화 속성 ── */
+  time_of_day: z.enum(['dawn', 'morning', 'afternoon', 'evening', 'night']).describe(
+    '런닝 시간대. 앱에 표시된 시간/라벨 기준: dawn(04~06), morning(06~12), afternoon(12~17), evening(17~21), night(21~04). "Night Run" 등 라벨이 있으면 그대로 따른다'
+  ),
+  route_type: z.enum(['track', 'road', 'trail', 'treadmill', 'unknown']).describe(
+    '루트 유형. GPS 궤적 형태 기반: track=반복 루프/트랙, road=직선/도로, trail=불규칙/산길, treadmill=GPS 없음/실내 표시. 판별 불가하면 unknown'
+  ),
 });
 
 type RunParseResult = z.infer<typeof RunParseSchema>;
@@ -54,17 +65,21 @@ type RunParseResult = z.infer<typeof RunParseSchema>;
 /* ─── VLM 프롬프트 ─── */
 
 const VLM_SYSTEM = `당신은 런닝 앱 스크린샷을 분석하는 전문가입니다.
-이미지에서 런닝 기록 데이터를 정확하게 추출하세요.
+이미지에서 런닝 기록 데이터와 환경 속성을 정확하게 추출하세요.
 
 지원하는 앱: Strava, 나이키런(Nike Run Club), 삼성헬스(Samsung Health), Garmin Connect, 기타.
 
-규칙:
+기본 기록 규칙:
 - 거리는 항상 km 단위로 변환하세요 (마일이면 × 1.609).
 - 시간은 분 단위 정수로 반올림하세요.
 - 페이스는 "mm:ss" 형식 (/km). 표시가 없으면 거리÷시간으로 계산하세요.
 - 날짜가 보이면 YYYY-MM-DD 형식으로. 연도가 없으면 올해(2026)로 가정하세요.
 - 런닝 스크린샷이 아니면 confidence를 0으로 설정하세요.
-- 데이터가 일부만 보이면 보이는 것만 추출하고 confidence를 낮추세요.`;
+- 데이터가 일부만 보이면 보이는 것만 추출하고 confidence를 낮추세요.
+
+환경 속성 규칙:
+- time_of_day: "Night Run", "Morning Run" 같은 라벨이 있으면 우선. 없으면 시각 데이터로 판단. dawn=04~06, morning=06~12, afternoon=12~17, evening=17~21, night=21~04.
+- route_type: GPS 궤적 형태로 판단. 타원/원형 반복 루프=track, 직선/구간 왕복=road, 불규칙 곡선/산길=trail, GPS 없거나 실내 표시=treadmill, 불명=unknown.`;
 
 /* ─── 메인 핸들러 ─── */
 
@@ -118,14 +133,35 @@ async function handleCheckHash(body: { user_id: string; image_hash: string }) {
 /* ─── Step 2: VLM 파싱 ─── */
 
 /**
- * 스크린샷 이미지를 gpt-4.1 vision으로 분석해서 런닝 데이터를 추출한다.
- * structured output(Zod)으로 JSON 형식을 보장.
+ * 스크린샷 이미지를 메타데이터 검증 후 gpt-4.1 vision으로 분석해서
+ * 런닝 데이터를 추출한다. structured output(Zod)으로 JSON 형식을 보장.
+ *
+ * 메타데이터 검증 (Gate A 강화):
+ *   M1: 편집 소프트웨어 감지 → 즉시 거부
+ *   M2: 해상도 범위 이탈 → 거부 또는 경고
+ *   M3: 스마트폰 비율이 아님 → 경고
+ *   M4: 타임스탬프 이상 → 경고
+ *   M5: 지원하지 않는 포맷 → 거부
  */
 async function handleParse(body: { image_base64: string }) {
   const { image_base64 } = body;
 
   if (!image_base64) {
     return NextResponse.json({ error: 'image_base64 필수' }, { status: 400 });
+  }
+
+  /* ── 메타데이터 검증 (VLM 호출 전에 먼저 체크) ── */
+  const imageBuffer = Buffer.from(image_base64, 'base64');
+  const validation = await validateImageMetadata(imageBuffer);
+
+  /* 거부 대상이면 VLM 호출 없이 즉시 반환 (API 비용 절약) */
+  if (!validation.passed) {
+    return NextResponse.json({
+      error: validation.reject_reason,
+      gate: 'A',
+      rule: 'metadata',
+      meta_summary: validation.meta_summary,
+    }, { status: 422 });
   }
 
   /* gpt-4.1 vision 호출 — structured output (chat.completions.parse) */
@@ -155,7 +191,12 @@ async function handleParse(body: { image_base64: string }) {
 
   const parsed = response.choices[0].message.parsed as RunParseResult;
 
-  return NextResponse.json({ parsed });
+  return NextResponse.json({
+    parsed,
+    /* 메타데이터 경고가 있으면 함께 전달 (UI에서 표시) */
+    meta_warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
+    meta_summary: validation.meta_summary,
+  });
 }
 
 /* ─── Step 3: 검증 + 저장 (Gate B/C + Storage + DB) ─── */
@@ -230,6 +271,11 @@ async function handleConfirm(body: {
   /* 토큰 계산: km × 10 (기본 공식) */
   const tokensEarned = Math.round(run.distance_km * 10);
 
+  /* 거리/페이스로 파생 속성 계산 */
+  const distanceType = run.distance_km < 5 ? 'short' : run.distance_km < 10 ? 'mid' : 'long';
+  const paceSeconds = run.pace ? paceToSeconds(run.pace) : (run.duration_minutes * 60) / Math.max(run.distance_km, 0.1);
+  const paceType = paceSeconds < 300 ? 'sprint' : paceSeconds < 420 ? 'jogger' : 'slow';
+
   /* runs 테이블에 INSERT */
   const { error: insertError } = await supabase.from('runs').insert({
     user_id,
@@ -241,6 +287,11 @@ async function handleConfirm(body: {
     tokens_earned: tokensEarned,
     image_hash,
     screenshot_url: screenshotUrl,
+    /* 캐릭터 진화 속성 */
+    time_of_day: run.time_of_day || null,
+    distance_type: distanceType,
+    pace_type: paceType,
+    route_type: run.route_type || null,
   });
 
   if (insertError) {
@@ -259,9 +310,22 @@ async function handleConfirm(body: {
     .single();
 
   const newTokens = ((charData?.tokens as number) || 0) + tokensEarned;
+
+  /* ── 누적 속성 집계 ── */
+  const { data: allRuns } = await supabase
+    .from('runs')
+    .select('run_date, time_of_day, distance_type, pace_type, route_type')
+    .eq('character_id', character_id);
+
+  const runTraits = aggregateRunTraits(allRuns || []);
+
+  /* 캐릭터 업데이트: 토큰 + 속성 */
   await supabase
     .from('characters')
-    .update({ tokens: newTokens })
+    .update({
+      tokens: newTokens,
+      run_traits: runTraits,
+    })
     .eq('id', character_id);
 
   return NextResponse.json({

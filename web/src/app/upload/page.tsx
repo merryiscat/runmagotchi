@@ -26,10 +26,19 @@ interface ParseResult {
   run_date: string | null;
   app_name: string;
   confidence: number;
+  /* 캐릭터 진화 속성 */
+  time_of_day: string;
+  route_type: string;
 }
 
 /** Gate C 경고 */
 interface Warning {
+  rule: string;
+  message: string;
+}
+
+/** 메타데이터 경고 (편집 감지, 해상도 이상 등) */
+interface MetaWarning {
   rule: string;
   message: string;
 }
@@ -49,6 +58,7 @@ export default function UploadPage() {
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [result, setResult] = useState<{ tokens_earned: number } | null>(null);
+  const [metaWarnings, setMetaWarnings] = useState<MetaWarning[]>([]);
 
   /* 수정 가능한 필드 */
   const [editKm, setEditKm] = useState('');
@@ -114,6 +124,11 @@ export default function UploadPage() {
       }
 
       const p: ParseResult = parseData.parsed;
+
+      /* 메타데이터 경고 저장 (편집 감지, 해상도 이상 등) */
+      if (parseData.meta_warnings) {
+        setMetaWarnings(parseData.meta_warnings);
+      }
 
       /* confidence 체크 */
       if (p.confidence < 0.5) {
@@ -185,6 +200,8 @@ export default function UploadPage() {
             duration_minutes: parseInt(editMin, 10),
             pace: editPace || null,
             run_date: editDate,
+            time_of_day: parsed?.time_of_day || null,
+            route_type: parsed?.route_type || null,
           },
         }),
       });
@@ -230,13 +247,23 @@ export default function UploadPage() {
     <div className="frame frame--web" style={{ minHeight: '100vh', maxWidth: 'none' }}>
       <div style={{ padding: 'var(--s-5)', maxWidth: 720, margin: '0 auto', width: '100%' }}>
 
-        {/* 상단바 */}
-        <div className="topbar">
-          <a href="/dashboard" style={{ textDecoration: 'none', color: 'var(--ink-strong)' }}>
-            ← 돌아가기
+        {/* 상단바 — 공통 GNB 사용 불가 (클라이언트 컴포넌트 내부이므로 인라인) */}
+        <div className="gnb" style={{ marginBottom: 'var(--s-4)' }}>
+          <a href="/dashboard" className="gnb__logo" style={{ textDecoration: 'none' }}>
+            ←
           </a>
-          <span className="topbar__title">업로드</span>
-          <span style={{ width: 60 }} />
+          <span style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            fontFamily: 'var(--font-penscript)', fontSize: 'var(--fs-md)',
+            fontWeight: 700, color: 'var(--ink-strong)',
+          }}>
+            업로드
+          </span>
+          <nav className="gnb__nav" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
+            <a href="/shop">상점</a>
+            <a href="/dashboard">대시보드</a>
+            <a href="/profile">프로필</a>
+          </nav>
         </div>
 
         {/* ── Step 1: 사진 선택 ── */}
@@ -325,6 +352,26 @@ export default function UploadPage() {
               </div>
             </div>
 
+            {/* 메타데이터 경고 (편집 의심, 오래된 스크린샷 등) */}
+            {metaWarnings.length > 0 && (
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 'var(--s-2)',
+              }}>
+                {metaWarnings.map(w => (
+                  <div key={w.rule} style={{
+                    padding: 'var(--s-2) var(--s-3)',
+                    background: 'var(--clay-soft)',
+                    border: '1px solid var(--line)',
+                    borderLeft: '3px solid var(--hwang)',
+                    fontSize: 'var(--fs-sm)',
+                    color: 'var(--ink-muted)',
+                  }}>
+                    {w.message}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* 코인 미리보기 */}
             {previewTokens > 0 && (
               <div style={{
@@ -351,7 +398,7 @@ export default function UploadPage() {
 
             <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
               <button className="btn" style={{ flex: 1 }}
-                onClick={() => { setStep('select'); setParsed(null); setError(''); }}>
+                onClick={() => { setStep('select'); setParsed(null); setError(''); setMetaWarnings([]); }}>
                 다시 선택
               </button>
               <button className="btn btn--primary" style={{ flex: 2 }}
