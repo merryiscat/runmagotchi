@@ -78,7 +78,7 @@ export default function ZoomableStage({ children }: Props) {
     lastDistRef.current = null;
   }, []);
 
-  /* ─── 마우스 드래그 ────────────────────────────────────── */
+  /* ─── 마우스 드래그 (패닝) ────────────────────────────────── */
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
     dragging.current = true;
@@ -103,7 +103,9 @@ export default function ZoomableStage({ children }: Props) {
     const el = containerRef.current;
     if (!el) return;
 
-    el.addEventListener('wheel', handleWheel, { passive: false });
+    /* wheel은 .stage 부모에 걸어서 위에 덮인 레이어도 줌 가능 */
+    const stageEl = (el.closest('.stage') as HTMLElement) || el;
+    stageEl.addEventListener('wheel', handleWheel as EventListener, { passive: false });
     el.addEventListener('touchstart', handleTouchStart, { passive: true });
     el.addEventListener('touchmove', handleTouchMove, { passive: false });
     el.addEventListener('touchend', handleTouchEnd);
@@ -112,7 +114,8 @@ export default function ZoomableStage({ children }: Props) {
     window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      el.removeEventListener('wheel', handleWheel);
+      const stageEl = (el.closest('.stage') as HTMLElement) || el;
+      stageEl.removeEventListener('wheel', handleWheel as EventListener);
       el.removeEventListener('touchstart', handleTouchStart);
       el.removeEventListener('touchmove', handleTouchMove);
       el.removeEventListener('touchend', handleTouchEnd);

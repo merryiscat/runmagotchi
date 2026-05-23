@@ -2,10 +2,9 @@
  * GNB — 전역 상단 네비게이션 바
  *
  * 모든 페이지에서 동일한 구조:
- *   [로고]                    [코인] | [상점] [대시보드] [프로필] [로그아웃]
+ *   [로고]                    [코인] | [대시보드] [withRUN] [상점] [프로필] [로그아웃]
  *
- * 현재 페이지에 해당하는 탭에 활성 스타일 적용.
- * 코인은 서버에서 전달받아 표시 (없으면 숨김).
+ * 탭 너비 고정 — 활성 탭이 bold 되어도 코인 위치가 밀리지 않음.
  */
 
 interface Props {
@@ -13,11 +12,19 @@ interface Props {
   active?: 'dashboard' | 'shop' | 'profile' | 'upload' | 'rooms';
   /** 코인 잔액 (undefined면 코인 표시 안 함) */
   coins?: number;
-  /** 뒤로가기 모드 — true면 로고 대신 "← 돌아가기" 표시 */
+  /** 뒤로가기 모드 */
   backTo?: string;
   /** 페이지 제목 (뒤로가기 모드일 때 중앙에 표시) */
   title?: string;
 }
+
+/* 탭 정의 — 고정 너비로 bold 시 레이아웃 시프트 방지 */
+const TABS = [
+  { key: 'dashboard', label: '대시보드', href: '/dashboard', width: 62 },
+  { key: 'rooms',     label: 'withRUN',  href: '/rooms',     width: 60 },
+  { key: 'shop',      label: '상점',     href: '/shop',      width: 34 },
+  { key: 'profile',   label: '프로필',   href: '/profile',   width: 42 },
+] as const;
 
 export default function GNB({ active, coins, backTo, title }: Props) {
   return (
@@ -67,23 +74,25 @@ export default function GNB({ active, coins, backTo, title }: Props) {
           </>
         )}
 
-        {/* 탭 링크 */}
-        <a href="/dashboard"
-          className={active === 'dashboard' ? 'active' : ''}
-          style={active === 'dashboard' ? { fontWeight: 700, color: 'var(--ink-strong)' } : undefined}
-        >대시보드</a>
-        <a href="/rooms"
-          className={active === 'rooms' ? 'active' : ''}
-          style={active === 'rooms' ? { fontWeight: 700, color: 'var(--ink-strong)' } : undefined}
-        >withRUN</a>
-        <a href="/shop"
-          className={active === 'shop' ? 'active' : ''}
-          style={active === 'shop' ? { fontWeight: 700, color: 'var(--ink-strong)' } : undefined}
-        >상점</a>
-        <a href="/profile"
-          className={active === 'profile' ? 'active' : ''}
-          style={active === 'profile' ? { fontWeight: 700, color: 'var(--ink-strong)' } : undefined}
-        >프로필</a>
+        {/* 탭 링크 — 고정 너비 */}
+        {TABS.map(tab => {
+          const isActive = active === tab.key;
+          return (
+            <a
+              key={tab.key}
+              href={tab.href}
+              className={isActive ? 'active' : ''}
+              style={{
+                width: tab.width,
+                textAlign: 'center',
+                fontWeight: isActive ? 700 : undefined,
+                color: isActive ? 'var(--ink-strong)' : undefined,
+              }}
+            >
+              {tab.label}
+            </a>
+          );
+        })}
 
         {/* 로그아웃 */}
         <form action="/auth/signout" method="post" style={{ display: 'inline' }}>

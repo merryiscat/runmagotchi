@@ -43,7 +43,7 @@ const nanumMyeongjo = Nanum_Myeongjo({
 
 export const metadata: Metadata = {
   title: 'Runmagotchi',
-  description: '런닝으로 키우는 나만의 캐릭터',
+  description: '런닝으로 키우는 나만의 런닝메이트',
 };
 
 export default function RootLayout({

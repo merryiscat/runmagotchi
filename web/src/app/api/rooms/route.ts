@@ -246,25 +246,30 @@ async function handleSetGoal(body: {
 async function handleMembers(body: { room_id: string }) {
   const { room_id } = body;
 
-  /* 멤버 + 캐릭터 + 프로필 조인 */
+  /* 멤버 목록 조회 */
   const { data: members } = await supabase
     .from('room_members')
-    .select(`
-      user_id,
-      character_id,
-      joined_at,
-      characters (
-        name, gender, stage, hatched, level
-      ),
-      profiles:user_id (
-        nickname
-      )
-    `)
+    .select('user_id, character_id, joined_at')
     .eq('room_id', room_id);
 
-  /* 각 캐릭터의 도트 이미지 조회 */
+  /* 각 멤버의 캐릭터 + 프로필 + 이미지를 개별 조회 (조인 대신 확실한 방식) */
   const result = [];
   for (const m of members || []) {
+    /* 캐릭터 정보 */
+    const { data: char } = await supabase
+      .from('characters')
+      .select('name, gender, stage, hatched, level')
+      .eq('id', m.character_id)
+      .single();
+
+    /* 프로필 (닉네임) */
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nickname')
+      .eq('id', m.user_id)
+      .single();
+
+    /* 도트 이미지 */
     const { data: pixelImg } = await supabase
       .from('character_images')
       .select('url')
@@ -272,13 +277,25 @@ async function handleMembers(body: { room_id: string }) {
       .eq('type', 'pixel_idle')
       .single();
 
+    /* 런닝 기록 (최근 10건) */
+    const { data: runs } = await supabase
+      .from('runs')
+      .select('distance_km, duration_minutes, pace, run_date, tokens_earned')
+      .eq('user_id', m.user_id)
+      .order('run_date', { ascending: false })
+      .limit(10);
+
+    const totalKm = (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
+
     result.push({
       user_id: m.user_id,
       character_id: m.character_id,
-      nickname: (m as any).profiles?.nickname || '???',
-      character: (m as any).characters,
+      nickname: profile?.nickname || '???',
+      character: char || null,
       pixel_url: pixelImg?.url || null,
       joined_at: m.joined_at,
+      runs: runs || [],
+      total_km: totalKm,
     });
   }
 

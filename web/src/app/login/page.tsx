@@ -1,27 +1,30 @@
 /**
- * 로그인 / 회원가입 페이지 (O1 기획 기반)
+ * 로그인 페이지 (O1 기획)
  *
- * 기획안: frame--web 풀스크린, 센터 정렬, max-width 420px 콘텐츠.
- * 로고 크게 + 이메일/비밀번호 + 소셜 로그인.
+ * 로그인 폼이 기본. "가입" 클릭 시 팝업 모달로 회원가입.
  */
 
 'use client';
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
+  /* 가입 팝업 */
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [signEmail, setSignEmail] = useState('');
+  const [signPassword, setSignPassword] = useState('');
+  const [signMessage, setSignMessage] = useState('');
+  const [signLoading, setSignLoading] = useState(false);
+
   const supabase = createClient();
 
-  /** 소셜 로그인 */
+  /* ── 소셜 로그인 ── */
   async function handleSocialLogin(provider: 'google' | 'kakao') {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -30,91 +33,99 @@ export default function LoginPage() {
     if (error) setMessage(`${provider} 로그인 실패: ${error.message}`);
   }
 
-  /** 이메일 로그인/가입 */
-  async function handleSubmit(e: React.FormEvent) {
+  /* ── 이메일 로그인 ── */
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email, password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) {
-        setMessage(`가입 실패: ${error.message}`);
-      } else {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // 이미 프로필이 있으면 중복 가입
-          const { data: existing } = await supabase
-            .from('profiles').select('id').eq('id', user.id).single();
-          if (existing) {
-            setMessage('이미 가입된 이메일입니다');
-            setLoading(false);
-            return;
-          }
-          window.location.href = '/onboarding';
-          setLoading(false);
-          return;
-        }
-        setMessage('확인 메일 발송 완료');
-      }
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setMessage(`로그인 실패: ${error.message}`);
-      } else if (data?.user) {
-        // 프로필 존재 여부로 기존 가입자인지 확인
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .single();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setMessage(`로그인 실패: ${error.message}`);
+      setLoading(false);
+      return;
+    }
 
-        if (profile) {
-          // 기존 가입자 → 대시보드
-          window.location.href = '/dashboard';
-        } else {
-          // 신규 (프로필 미생성) → 온보딩
-          window.location.href = '/onboarding';
-        }
-      }
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+
+      window.location.href = profile ? '/dashboard' : '/onboarding';
     }
     setLoading(false);
   }
 
+  /* ── 이메일 가입 (팝업) ── */
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setSignLoading(true);
+    setSignMessage('');
+
+    const { error } = await supabase.auth.signUp({
+      email: signEmail,
+      password: signPassword,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+
+    if (error) {
+      setSignMessage(`가입 실패: ${error.message}`);
+      setSignLoading(false);
+      return;
+    }
+
+    /* 가입 후 바로 로그인 시도 */
+    const { data } = await supabase.auth.signInWithPassword({
+      email: signEmail,
+      password: signPassword,
+    });
+
+    if (data?.user) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+
+      if (existing) {
+        setSignMessage('이미 가입된 이메일');
+        setSignLoading(false);
+        return;
+      }
+
+      window.location.href = '/onboarding';
+      return;
+    }
+
+    setSignMessage('확인 메일 발송 완료');
+    setSignLoading(false);
+  }
+
+  /* 입력 스타일 */
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: 'var(--s-3)', border: '1px solid var(--line)',
+    background: 'var(--surface)', color: 'var(--ink-strong)',
+    fontSize: 'var(--fs-md)', fontFamily: 'inherit',
+  };
+
   return (
-    /* O1 기획: frame--web 풀스크린, 세로 센터 정렬 */
     <div className="min-h-screen flex flex-col items-center justify-center bg-paper"
          style={{ border: '1px solid var(--line-strong)' }}>
       <div style={{ maxWidth: 420, width: '100%', padding: 'var(--s-5)', textAlign: 'center' }}>
 
-        {/* 로고 — O1 기획: 큰 워드마크 */}
+        {/* 로고 */}
         <div style={{ marginBottom: 'var(--s-7)' }}>
           <img src="/logo.png" alt="Runmagotchi" style={{ height: 56, margin: '0 auto' }} />
         </div>
 
-        {/* 이메일/비밀번호 폼 */}
-        <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: 'var(--s-3)' }}>
-          <input
-            type="email" placeholder="이메일" value={email}
-            onChange={(e) => setEmail(e.target.value)} required
-            style={{
-              width: '100%', padding: 'var(--s-3)', border: '1px solid var(--line)',
-              background: 'var(--surface)', color: 'var(--ink-strong)',
-              fontSize: 'var(--fs-md)', fontFamily: 'inherit',
-            }}
-          />
-          <input
-            type="password" placeholder="비밀번호" value={password}
-            onChange={(e) => setPassword(e.target.value)} required minLength={6}
-            style={{
-              width: '100%', padding: 'var(--s-3)', border: '1px solid var(--line)',
-              background: 'var(--surface)', color: 'var(--ink-strong)',
-              fontSize: 'var(--fs-md)', fontFamily: 'inherit',
-            }}
-          />
+        {/* ── 로그인 폼 ── */}
+        <form onSubmit={handleLogin} className="flex flex-col" style={{ gap: 'var(--s-3)' }}>
+          <input type="email" placeholder="이메일" value={email}
+            onChange={e => setEmail(e.target.value)} required style={inputStyle} />
+          <input type="password" placeholder="비밀번호" value={password}
+            onChange={e => setPassword(e.target.value)} required minLength={6} style={inputStyle} />
           <button type="submit" disabled={loading} style={{
             width: '100%', padding: 'var(--s-3) var(--s-4)',
             background: 'var(--jeok)', color: 'var(--on-jeok)',
@@ -122,11 +133,10 @@ export default function LoginPage() {
             fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.5 : 1, fontFamily: 'inherit',
           }}>
-            {loading ? '처리 중...' : isSignUp ? '가입' : '로그인'}
+            {loading ? '처리 중...' : '로그인'}
           </button>
         </form>
 
-        {/* 메시지 */}
         {message && (
           <p style={{ marginTop: 'var(--s-4)', fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)' }}>{message}</p>
         )}
@@ -138,7 +148,7 @@ export default function LoginPage() {
           <div style={{ flex: 1, height: 1, background: 'var(--line-soft)' }} />
         </div>
 
-        {/* 소셜 로그인 — O1 기획: btn--social 스타일 */}
+        {/* 소셜 로그인 */}
         <div className="flex flex-col" style={{ gap: 'var(--s-3)' }}>
           <button onClick={() => handleSocialLogin('google')} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--s-3)',
@@ -169,13 +179,13 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* 모드 전환 */}
-        <button onClick={() => { setIsSignUp(!isSignUp); setMessage(''); }}
+        {/* 가입 링크 → 팝업 */}
+        <button onClick={() => { setShowSignUp(true); setSignMessage(''); }}
           style={{
             marginTop: 'var(--s-5)', fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)',
             background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
           }}>
-          {isSignUp ? '이미 계정이 있나요? 로그인' : '계정이 없나요? 가입'}
+          계정이 없나요? 가입
         </button>
 
         {/* 약관 */}
@@ -183,7 +193,6 @@ export default function LoginPage() {
           시작하면 <u>이용약관</u> 및 <u>개인정보 처리방침</u>에 동의하게 됩니다.
         </div>
 
-        {/* 하단 안내 */}
         <div style={{
           marginTop: 'var(--s-7)', fontSize: 'var(--fs-xs)', color: 'var(--ink-faint)',
           lineHeight: 1.6, textAlign: 'center',
@@ -192,6 +201,60 @@ export default function LoginPage() {
           <div style={{ marginTop: 'var(--s-1)' }}>Made by merryiscat</div>
         </div>
       </div>
+
+      {/* ── 가입 팝업 ── */}
+      {showSignUp && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 'var(--s-4)',
+        }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--ink-strong)',
+              padding: 'var(--s-5)',
+              width: '100%', maxWidth: 380,
+              display: 'flex', flexDirection: 'column', gap: 'var(--s-3)',
+            }}
+          >
+            <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, textAlign: 'center' }}>
+              회원가입
+            </div>
+
+            <form onSubmit={handleSignUp} className="flex flex-col" style={{ gap: 'var(--s-3)' }}>
+              <input type="email" placeholder="이메일" value={signEmail}
+                onChange={e => setSignEmail(e.target.value)} required style={inputStyle} />
+              <input type="password" placeholder="비밀번호 (6자 이상)" value={signPassword}
+                onChange={e => setSignPassword(e.target.value)} required minLength={6} style={inputStyle} />
+              <button type="submit" disabled={signLoading} style={{
+                width: '100%', padding: 'var(--s-3) var(--s-4)',
+                background: 'var(--jeok)', color: 'var(--on-jeok)',
+                border: '1px solid var(--jeok)', fontSize: 'var(--fs-md)',
+                fontWeight: 700, cursor: signLoading ? 'not-allowed' : 'pointer',
+                opacity: signLoading ? 0.5 : 1, fontFamily: 'inherit',
+              }}>
+                {signLoading ? '처리 중...' : '가입'}
+              </button>
+            </form>
+
+            {signMessage && (
+              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)', textAlign: 'center' }}>
+                {signMessage}
+              </p>
+            )}
+
+            <button onClick={() => setShowSignUp(false)} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 'var(--fs-sm)', color: 'var(--ink-muted)', fontFamily: 'inherit',
+            }}>
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

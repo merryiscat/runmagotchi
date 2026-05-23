@@ -182,7 +182,7 @@ export default function UploadPage() {
         .order('created_at', { ascending: false })
         .limit(1);
       const character = chars?.[0];
-      if (!character) { setError('캐릭터 없음'); setStep('preview'); return; }
+      if (!character) { setError('런닝메이트 없음'); setStep('preview'); return; }
 
       /* 서버로 확정 요청 */
       const res = await fetch('/api/upload-run', {
@@ -454,8 +454,8 @@ export default function UploadPage() {
         {error && (
           <div style={{
             marginTop: 'var(--s-4)', padding: 'var(--s-3) var(--s-4)',
-            border: '2px solid var(--jeok)', background: 'var(--surface)',
-            fontSize: 'var(--fs-sm)', color: 'var(--jeok)', textAlign: 'center',
+            border: '2px solid var(--ink-strong)', background: 'var(--surface)',
+            fontSize: 'var(--fs-sm)', color: 'var(--ink-strong)', textAlign: 'center',
           }}>
             {error}
           </div>

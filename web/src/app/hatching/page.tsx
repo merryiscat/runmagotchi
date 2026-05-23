@@ -118,7 +118,7 @@ export default function HatchingPage() {
           )}
 
           {(phase === 'hatched' || phase === 'naming') && pixelUrl && (
-            <img src={pixelUrl} alt="캐릭터"
+            <img src={pixelUrl} alt="런닝메이트"
               style={{
                 width: 200, objectFit: 'contain', imageRendering: 'pixelated',
                 animation: 'fadeIn 0.8s ease-out',
@@ -175,7 +175,7 @@ export default function HatchingPage() {
               {saving ? '저장 중...' : '확정'}
             </button>
             {message && (
-              <div className="text-xs" style={{ color: 'var(--jeok)', textAlign: 'center' }}>{message}</div>
+              <div className="text-xs" style={{ color: 'var(--ink-strong)', textAlign: 'center' }}>{message}</div>
             )}
           </div>
         </div>

@@ -104,26 +104,21 @@ export default async function DashboardPage() {
           {/* 일러스트 보기 버튼 — 부화 후에만 표시 (알 상태는 스포일러) */}
           {character.hatched && illustImg?.url && <IllustButton url={illustImg.url} />}
 
-          {/* 스테이지 콘텐츠 */}
+          {/* 격자 + 줌 + 콘텐츠 (전부 ZoomableStage 안에서 같이 줌) */}
           <div style={{ position: 'absolute', inset: 0 }}>
-            {!character.hatched ? (
-              /* ── 알 상태: 터치로 부화 ── */
-              character.egg_image_url ? (
-                <EggStage
-                  characterId={character.id}
-                  eggImageUrl={character.egg_image_url}
-                  initialTouches={character.egg_touches || 0}
-                  initialAffection={currentAffection}
-                />
-              ) : character.image_status === 'failed' ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <ZoomableStage>
+              {!character.hatched ? (
+                character.egg_image_url ? (
+                  <EggStage
+                    characterId={character.id}
+                    eggImageUrl={character.egg_image_url}
+                    initialTouches={character.egg_touches || 0}
+                    initialAffection={currentAffection}
+                  />
+                ) : character.image_status === 'failed' ? (
                   <RetryCharacter characterId={character.id} />
-                </div>
-              ) : null
-            ) : (
-              /* ── 부화 후: 캐릭터 + 먹이주기 ── */
-              <>
-                <ZoomableStage>{null}</ZoomableStage>
+                ) : null
+              ) : (
                 <StageWithFeeding
                   characterId={character.id}
                   idleUrl={pixelImg?.url}
@@ -134,8 +129,8 @@ export default async function DashboardPage() {
                   affection={currentAffection}
                   hatched={true}
                 />
-              </>
-            )}
+              )}
+            </ZoomableStage>
           </div>
 
           {/* 스테이지 하단: 이름 */}

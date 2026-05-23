@@ -165,16 +165,16 @@ export default async function ProfilePage() {
             <span className="info-row__value">{pb > 0 ? `${pb.toFixed(1)} km` : '—'}</span>
           </div>
 
-          {/* 최근 기록 */}
+          {/* 전체 기록 */}
           {runs && runs.length > 0 && (
             <>
               <div className="section-head" style={{ marginTop: 'var(--s-3)' }}>
                 <span className="text-sm fw-bold" style={{ fontFamily: 'var(--font-penscript)', fontSize: 18 }}>
-                  최근 기록
+                  전체 기록
                 </span>
                 <span className="text-xs text-muted">{totalRuns}건</span>
               </div>
-              {runs.slice(0, 5).map((r, i) => (
+              {runs.map((r, i) => (
                 <div key={i} className="info-row">
                   <span className="info-row__label">{r.run_date}</span>
                   <span className="info-row__value">

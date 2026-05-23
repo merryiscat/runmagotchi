@@ -17,6 +17,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import {
   calcEggTouch,
@@ -85,10 +86,9 @@ export default function EggStage({
   const handleTouch = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (hatching) return;
 
-    /* 하트 이펙트 */
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    /* 하트 이펙트 — viewport 기준 좌표 (줌 transform 무관) */
+    const x = e.clientX;
+    const y = e.clientY;
     const uid = Math.random().toString(36).slice(2);
     setHearts(prev => [...prev, { uid, x, y }]);
     setTimeout(() => setHearts(prev => prev.filter(h => h.uid !== uid)), 800);
@@ -203,25 +203,28 @@ export default function EggStage({
         </div>
       </div>
 
-      {/* 하트 이펙트 */}
-      {hearts.map(h => (
-        <div
-          key={h.uid}
-          className="egg-heart"
-          style={{
-            position: 'absolute',
-            left: h.x, top: h.y,
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            zIndex: 30,
-            fontFamily: 'var(--font-penscript)',
-            fontSize: 24,
-            color: 'var(--jeok)',
-          }}
-        >
-          ♥
-        </div>
-      ))}
+      {/* 하트 이펙트 — Portal로 body에 직접 렌더 (transform 영향 회피) */}
+      {typeof document !== 'undefined' && createPortal(
+        hearts.map(h => (
+          <div
+            key={h.uid}
+            className="egg-heart"
+            style={{
+              position: 'fixed',
+              left: h.x, top: h.y,
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+              fontFamily: 'var(--font-penscript)',
+              fontSize: 42,
+              color: 'var(--jeok)',
+            }}
+          >
+            ♥
+          </div>
+        )),
+        document.body,
+      )}
 
       {/* 부화 이름짓기 모달 */}
       {showNaming && (

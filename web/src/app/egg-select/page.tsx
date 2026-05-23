@@ -38,6 +38,8 @@ export default function EggSelectPage() {
         router.push('/onboarding'); return;
       }
       setEggs(profile.egg_choices);
+      /* 중앙 알(인덱스 1) 자동 선택 */
+      setSelected(Math.min(1, profile.egg_choices.length - 1));
       setLoading(false);
     }
     load();
@@ -79,7 +81,7 @@ export default function EggSelectPage() {
       .single();
 
     if (charErr || !newChar) {
-      setMessage(`캐릭터 생성 실패: ${charErr?.message}`);
+      setMessage(`생성 실패: ${charErr?.message}`);
       setSaving(false);
       return;
     }
@@ -146,7 +148,7 @@ export default function EggSelectPage() {
             <p style={{ fontSize: 'var(--fs-md)', color: 'var(--ink-muted)' }}>준비 중...</p>
           )}
           {message && (
-            <p style={{ marginTop: 'var(--s-4)', fontSize: 'var(--fs-sm)', color: 'var(--jeok)' }}>{message}</p>
+            <p style={{ marginTop: 'var(--s-4)', fontSize: 'var(--fs-sm)', color: 'var(--ink-strong)' }}>{message}</p>
           )}
         </div>
       </div>

@@ -114,6 +114,29 @@
 body {
   background: var(--paper);
   color: var(--ink-strong);
+  /* 텍스트/이미지 선택 드래그 방지 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 입력 필드는 선택 허용 */
+input, textarea, select {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* 이미지 드래그 방지 */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* 더블클릭 선택 하이라이트 방지 */
+::selection {
+  background: transparent;
+}
+::-moz-selection {
+  background: transparent;
 }
 
 /* ─── UI Kit 컴포넌트 클래스 (theme.css 포팅) ───────────
