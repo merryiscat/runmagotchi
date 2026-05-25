@@ -328,6 +328,9 @@ async function handleConfirm(body: {
     })
     .eq('id', character_id);
 
+  /* ── withRUN: 소속 room의 목표 진행 갱신 ── */
+  await updateRoomGoals(user_id, run.distance_km);
+
   return NextResponse.json({
     success: true,
     tokens_earned: tokensEarned,
@@ -369,4 +372,89 @@ async function getRunHistory(userId: string, runDate: string): Promise<RunHistor
   const today_count = todayRuns.length;
 
   return { recent_paces, today_total_km, today_count };
+}
+
+/* ─── withRUN: 소속 room 목표 진행 갱신 ─── */
+
+/**
+ * 유저가 소속된 모든 room의 활성 목표에 대해
+ * 멤버 전체 합산 km을 재계산하고 current_km을 갱신한다.
+ * 목표 달성 시 completed=true + 보상 지급.
+ */
+async function updateRoomGoals(userId: string, addedKm: number) {
+  try {
+    /* 유저가 소속된 room 목록 */
+    const { data: memberships } = await supabase
+      .from('room_members')
+      .select('room_id')
+      .eq('user_id', userId);
+
+    if (!memberships || memberships.length === 0) return;
+
+    for (const { room_id } of memberships) {
+      /* 활성 목표 조회 */
+      const { data: goals } = await supabase
+        .from('room_goals')
+        .select('id, target_km, current_km, completed, reward_tokens')
+        .eq('room_id', room_id)
+        .eq('completed', false)
+        .limit(1);
+
+      const goal = goals?.[0];
+      if (!goal) continue;
+
+      /* 멤버 전체의 런닝 합산 */
+      const { data: members } = await supabase
+        .from('room_members')
+        .select('user_id')
+        .eq('room_id', room_id);
+
+      let totalKm = 0;
+      for (const m of members || []) {
+        const { data: runs } = await supabase
+          .from('runs')
+          .select('distance_km')
+          .eq('user_id', m.user_id);
+        totalKm += (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
+      }
+
+      /* current_km 갱신 */
+      const updates: Record<string, unknown> = { current_km: totalKm };
+
+      /* 목표 달성 체크 */
+      if (totalKm >= Number(goal.target_km) && !goal.completed) {
+        updates.completed = true;
+        updates.completed_at = new Date().toISOString();
+
+        /* 달성 보상: 멤버 전원에게 코인 지급 */
+        if (goal.reward_tokens > 0) {
+          for (const m of members || []) {
+            /* 멤버의 활성 캐릭터 찾기 */
+            const { data: chars } = await supabase
+              .from('characters')
+              .select('id, tokens')
+              .eq('user_id', m.user_id)
+              .eq('is_active', true)
+              .limit(1);
+
+            const char = chars?.[0];
+            if (char) {
+              await supabase
+                .from('characters')
+                .update({ tokens: (char.tokens || 0) + goal.reward_tokens })
+                .eq('id', char.id);
+            }
+          }
+        }
+      }
+
+      await supabase
+        .from('room_goals')
+        .update(updates)
+        .eq('id', goal.id);
+    }
+  } catch (err) {
+    /* room 갱신 실패가 런닝 업로드 자체를 막으면 안 됨 */
+    console.error('[upload-run] room 목표 갱신 실패:', err);
+  }
 }

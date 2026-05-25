@@ -110,11 +110,14 @@ export default async function RoomsPage() {
         });
       }
 
+      /* 멤버 전체 합산 km (DB의 current_km 대신 실시간 계산) */
+      const totalMemberKm = memberMarkers.reduce((s, m) => s + m.km, 0);
+
       rooms.push({
         ...room,
         memberCount: mList?.length || 0,
         goalKm: goals?.[0] ? Number(goals[0].target_km) : undefined,
-        currentKm: goals?.[0] ? Number(goals[0].current_km) : undefined,
+        currentKm: totalMemberKm,
         members: memberMarkers,
       });
     }
