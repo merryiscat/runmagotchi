@@ -109,13 +109,23 @@ export const BEHAVIOR_MOTION: Record<Behavior, BehaviorMotion> = {
  * character_images 테이블의 type 필드명.
  * LLM이 행동별 이미지를 생성할 때 이 이름으로 저장한다.
  */
-export const BEHAVIOR_IMAGE_TYPES: Record<Behavior, string> = {
-  happy:  'pixel_happy',
-  sad:    'pixel_sad',
-  hungry: 'pixel_hungry',
-  angry:  'pixel_angry',
-  joyful: 'pixel_joyful',
-  aegyo:  'pixel_aegyo',
+/**
+ * 행동별 이미지 타입 (4프레임 애니메이션)
+ * DB에는 pixel_happy1, pixel_happy2, pixel_happy3, pixel_happy4 로 저장
+ */
+/**
+ * 행동별 이미지 타입 (4프레임 애니메이션)
+ *
+ * 기본 이동: pixel_move1~4 (항상 사용, 돌아다님)
+ * 감정 표현: 랜덤 또는 조건에 따라 잠깐 보여줌
+ */
+export const BEHAVIOR_FRAME_TYPES: Record<string, string[]> = {
+  move:   ['pixel_move1', 'pixel_move2', 'pixel_move3', 'pixel_move4'],
+  happy:  ['pixel_happy1', 'pixel_happy2', 'pixel_happy3', 'pixel_happy4'],
+  sad:    ['pixel_sad1', 'pixel_sad2', 'pixel_sad3', 'pixel_sad4'],
+  hungry: ['pixel_hungry1', 'pixel_hungry2', 'pixel_hungry3', 'pixel_hungry4'],
+  joyful: ['pixel_joyful1', 'pixel_joyful2', 'pixel_joyful3', 'pixel_joyful4'],
+  aegyo:  ['pixel_aegyo1', 'pixel_aegyo2', 'pixel_aegyo3', 'pixel_aegyo4'],
 };
 
 /* ─── 행동 결정 로직 ─── */
@@ -135,43 +145,44 @@ export interface BehaviorInput {
 /**
  * 현재 스탯과 상호작용 이력으로 행동을 결정한다.
  *
- * 우선순위:
- *   1. aegyo   — 애정 ≥ 60 + 최근 터치
- *   2. joyful  — 최근 먹이/애정 받음
- *   3. angry   — 배고픔 < 10 + 애정 < 20
- *   4. sad     — 애정 < 25
- *   5. hungry  — 배고픔 < 30
- *   6. happy   — 기본
+ * 기본: 이동 (move) — 항상 돌아다님
+ * 감정 표현이 조건에 따라 끼어듦:
+ *   1. aegyo   — 터치 직후 (애정 ≥ 60)
+ *   2. joyful  — 먹이/애정 받은 직후 (15초)
+ *   3. sad     — 애정 < 25 (방치)
+ *   4. hungry  — 배고픔 < 30
+ *   5. happy   — 기분 좋을 때 랜덤 (20%)
+ *   6. move    — 기본 이동
  */
 export function determineBehavior(input: BehaviorInput): Behavior {
   const { hunger, affection, recentlyTouched, recentlyFed } = input;
 
-  /* 1. 애교: 애정이 높은데 터치를 받으면 */
+  /* 1. 애교: 터치 직후 + 애정 충분 */
   if (recentlyTouched && affection >= 60) {
     return 'aegyo';
   }
 
-  /* 2. 즐거움: 방금 먹이 먹었거나 애정 받음 */
+  /* 2. 즐거움: 방금 먹이/애정 받음 */
   if (recentlyFed) {
     return 'joyful';
   }
 
-  /* 3. 화남: 극도로 방치된 상태 (배고프고 애정도 바닥) */
-  if (hunger < 10 && affection < 20) {
-    return 'angry';
-  }
-
-  /* 4. 슬픔: 애정 부족 */
+  /* 3. 슬픔: 방치 (밥 안 줌 → 애정 하락) */
   if (affection < 25) {
     return 'sad';
   }
 
-  /* 5. 배고픔 */
+  /* 4. 배고픔 */
   if (hunger < 30) {
     return 'hungry';
   }
 
-  /* 6. 기본: 행복 */
+  /* 5. 랜덤 happy: 컨디션 좋을 때 가끔 */
+  if (hunger >= 50 && affection >= 50 && Math.random() < 0.2) {
+    return 'happy';
+  }
+
+  /* 6. 기본: 이동 — BouncingCharacter에서 move 프레임 사용 */
   return 'happy';
 }
 
@@ -395,6 +406,17 @@ export const STAGES: Stage[] = [
 
 /** 최대 레벨 */
 export const MAX_LEVEL = 40;
+
+/**
+ * 진화 이미지 사전 생성 트리거 레벨
+ * 해당 레벨 도달 시 다음 단계 이미지를 백그라운드 생성
+ */
+export const PRE_EVOLVE_LEVELS: Record<number, string> = {
+  9:  'child',  // Lv 9 도달 → 유년 이미지 사전 생성
+  19: 'teen',   // Lv 19 도달 → 초기체 이미지 사전 생성
+  29: 'adult',  // Lv 29 도달 → 중기체 이미지 사전 생성
+  39: 'final',  // Lv 39 도달 → 완전체 이미지 사전 생성
+};
 
 /** 완전체 단계명 */
 export const FINAL_STAGE = { name: 'final', label: '완전체' };

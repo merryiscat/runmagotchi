@@ -29,12 +29,14 @@ import {
   levelToStage,
   TouchTracker,
   TOUCH_EXP,
+  PRE_EVOLVE_LEVELS,
 } from '@/lib/behavior';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
   characterId: string;
   idleUrl?: string;
+  stage?: string;
   inventory: Record<string, number>;
   exp: number;
   level: number;
@@ -44,7 +46,7 @@ interface Props {
 }
 
 export default function StageWithFeeding({
-  characterId, idleUrl,
+  characterId, idleUrl, stage,
   inventory, exp, level, hunger: initialHunger, affection: initialAffection, hatched,
 }: Props) {
   /* FeedingStage에서 전달받은 음식 타겟 + 도착 콜백 */
@@ -143,6 +145,16 @@ export default function StageWithFeeding({
     if (newStage !== oldStage) {
       setTimeout(() => window.location.reload(), 1500);
     }
+
+    /* 사전 생성 트리거 (Lv 9/19/29/39) */
+    const preTarget = PRE_EVOLVE_LEVELS[newLevel];
+    if (preTarget && newLevel !== currentLevel) {
+      fetch('/api/generate-evolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId, targetStage: preTarget }),
+      });
+    }
   }, [affection, currentExp, currentLevel, characterId, supabase]);
 
   const touchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,14 +168,15 @@ export default function StageWithFeeding({
 
   return (
     <>
-      {/* 터치 감지 영역 (스테이지 전체) */}
+      {/* 터치 감지 영역 — 부화 후에만 활성 (알 상태에서는 EggStage가 터치 처리) */}
       <div
-        onPointerDown={handleStageTouch}
+        onPointerDown={hatched ? handleStageTouch : undefined}
         style={{
           position: 'absolute', inset: 0,
           zIndex: 1,
-          cursor: 'pointer',
+          cursor: hatched ? 'pointer' : 'default',
           touchAction: 'none',
+          pointerEvents: hatched ? 'auto' : 'none',
         }}
       />
 
@@ -172,6 +185,7 @@ export default function StageWithFeeding({
         <BouncingCharacter
           characterId={characterId}
           idleUrl={idleUrl}
+          stage={stage}
           behavior={behavior}
           affection={affection}
           touchPoint={touchPoint}

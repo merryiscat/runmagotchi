@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Docker standalone 모드 — 최소 이미지 크기 */
+  output: "standalone",
 };
 
 export default nextConfig;

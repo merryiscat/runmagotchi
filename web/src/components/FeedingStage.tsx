@@ -16,6 +16,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 
 /* ─── 아이템 정의 (기본 2종) ─────────────────────────────── */
@@ -32,7 +33,7 @@ interface ItemDef {
 
 const ITEM_DEFS: ItemDef[] = [
   { id: 'feed',  name: '먹이',       hungerGain: 30, affectionGain: 0,  expGain: 10, icon: '/icons/feed-1.png',  eggAllowed: false },
-  { id: 'love',  name: '애정',       hungerGain: 0,  affectionGain: 40, expGain: 10, icon: '/icons/love-1.png',  eggAllowed: false },
+  { id: 'love',  name: '애정',       hungerGain: 0,  affectionGain: 40, expGain: 10, icon: '/icons/love-1.png',  eggAllowed: true },
   { id: 'candy', name: '경험치 사탕', hungerGain: 0,  affectionGain: 0,  expGain: 20, icon: '/icons/candy-1.png', eggAllowed: false },
 ];
 
@@ -43,6 +44,7 @@ import {
   levelToStage,
   stageLabel,
   canUseItem,
+  PRE_EVOLVE_LEVELS,
 } from '@/lib/behavior';
 
 /* ─── Props ──────────────────────────────────────────────── */
@@ -169,17 +171,17 @@ export default function FeedingStage({
     const uid = Math.random().toString(36).slice(2);
     setFoods(prev => [...prev, { uid, id: itemId, x, y, status: 'dropping' }]);
 
-    /* 드롭 → waiting (스테이지에 계속 남아있음) */
+    /* 드롭 → waiting */
     setTimeout(() => {
       setFoods(prev => prev.map(f => f.uid === uid ? { ...f, status: 'waiting' } : f));
-    }, 380);
 
-    /*
-     * 음식은 스테이지에 유지됨. 캐릭터가 알아서 먹으러 감.
-     * 먹기 타이밍은 캐릭터가 음식 근처에 도착했을 때 처리.
-     * 현재는 BouncingCharacter와 좌표 연동 전이므로,
-     * waiting 상태 음식을 주기적으로 체크해서 처리하는 방식 사용.
-     */
+      /* 알 상태: 캐릭터가 없으므로 드롭 후 자동으로 먹음 (1초 후) */
+      if (!hatched) {
+        setTimeout(() => {
+          eatFood(uid, itemId, x, y, { ...inventory, [itemId]: (inventory[itemId] || 0) - 1 });
+        }, 800);
+      }
+    }, 380);
   }
 
   /* ── 먹기 → Supabase 업데이트 ── */
@@ -242,6 +244,19 @@ export default function FeedingStage({
     if (newStage !== oldStage && newStage !== 'egg') {
       pushMsg(`${stageLabel(newStage)}(으)로 진화!`, x, y - 60);
       setTimeout(() => window.location.reload(), 1500);
+    }
+
+    /* 진화 이미지 사전 생성 트리거 (Lv 9/19/29/39) */
+    const preEvolveTarget = PRE_EVOLVE_LEVELS[newLevel];
+    if (preEvolveTarget && newLevel !== level) {
+      fetch('/api/generate-evolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          characterId,
+          targetStage: preEvolveTarget,
+        }),
+      }); // fire-and-forget
     }
   }
 
@@ -357,12 +372,12 @@ export default function FeedingStage({
         </div>
       )}
 
-      {/* ═══ 드래그 중 커서에 따라다니는 아이콘 ═══ */}
-      {dragItem && (
+      {/* ═══ 드래그 중 커서에 따라다니는 아이콘 (Portal로 body 직접 렌더) ═══ */}
+      {dragItem && typeof document !== 'undefined' && createPortal(
         <div style={{
           position: 'fixed',
           left: dragPos.x - 20, top: dragPos.y - 20,
-          pointerEvents: 'none', zIndex: 100,
+          pointerEvents: 'none', zIndex: 9999,
           opacity: 0.85,
         }}>
           <div style={{
@@ -372,10 +387,11 @@ export default function FeedingStage({
             <img
               src={ITEM_DEFS.find(d => d.id === dragItem)?.icon}
               alt="" width={36} height={36}
-              style={{ objectFit: 'contain', display: 'block' }}
+              style={{ objectFit: 'contain', display: 'block', pointerEvents: 'auto' }}
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ═══ 드롭된 음식 ═══ */}

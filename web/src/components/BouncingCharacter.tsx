@@ -26,7 +26,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   type Behavior,
   BEHAVIOR_MOTION,
-  BEHAVIOR_IMAGE_TYPES,
+  BEHAVIOR_FRAME_TYPES,
 } from '@/lib/behavior';
 
 /* ─── 상수 ─────────────────────────────────────────────── */
@@ -64,6 +64,8 @@ export interface FoodTarget {
 interface Props {
   characterId: string;
   idleUrl?: string;
+  /** 현재 진화 단계 (이미지 로드 시 stage 필터) */
+  stage?: string;
   /** 현재 행동 상태 */
   behavior?: Behavior;
   /** 현재 애정도 (터치 반응 방향 결정) */
@@ -116,6 +118,7 @@ const SPECIAL_CSS: Record<string, string> = {
 export default function BouncingCharacter({
   characterId,
   idleUrl,
+  stage,
   behavior = 'happy',
   affection = 50,
   touchPoint = null,
@@ -150,18 +153,22 @@ export default function BouncingCharacter({
 
   useEffect(() => {
     async function loadAllFrames() {
-      /* 모든 행동의 이미지 타입 목록 생성 */
+      /* 모든 이미지 타입 목록: idle + bounce4 + 행동별 4프레임 */
       const allTypes = [
         'pixel_idle',
         'pixel_bounce1', 'pixel_bounce2', 'pixel_bounce3', 'pixel_bounce4',
-        ...Object.values(BEHAVIOR_IMAGE_TYPES),
+        'pixel_move1', 'pixel_move2', 'pixel_move3', 'pixel_move4',
+        ...Object.values(BEHAVIOR_FRAME_TYPES).flat(),
       ];
 
-      const { data } = await supabase
+      /* stage가 있으면 해당 단계 이미지만, 없으면 전체 */
+      let query = supabase
         .from('character_images')
         .select('type, url')
         .eq('character_id', characterId)
         .in('type', allTypes);
+      if (stage) query = query.eq('stage', stage);
+      const { data } = await query;
 
       if (!data || data.length === 0) {
         if (idleUrl) setFramesByBehavior({ default: [idleUrl] });
@@ -175,31 +182,41 @@ export default function BouncingCharacter({
       const idle = idleUrl || map['pixel_idle'] || '';
       if (!idle) return;
 
-      /* 기본 바운스 프레임 (happy 등에서 사용) */
+      /* 기본 바운스 프레임 (이동 애니메이션) */
       const b1 = map['pixel_bounce1'];
       const b2 = map['pixel_bounce2'];
       const b3 = map['pixel_bounce3'];
       const b4 = map['pixel_bounce4'];
 
-      const defaultFrames = (b1 && b2 && b3 && b4)
-        ? [idle, b1, b2, b3, b4]
+      /* 이동 프레임: move1~4 우선, 없으면 bounce1~4 폴백 */
+      const m1 = map['pixel_move1'] || b1;
+      const m2 = map['pixel_move2'] || b2;
+      const m3 = map['pixel_move3'] || b3;
+      const m4 = map['pixel_move4'] || b4;
+
+      const defaultFrames = (m1 && m2 && m3 && m4)
+        ? [idle, m1, m2, m3, m4]
         : [idle];
 
-      /* 행동별 프레임 세트 구성 */
+      /* 행동별 4프레임 세트 구성 */
       const result: Record<string, string[]> = { default: defaultFrames };
 
-      for (const [beh, imgType] of Object.entries(BEHAVIOR_IMAGE_TYPES)) {
-        if (map[imgType]) {
-          /* 행동 전용 이미지가 있으면 그걸 사용 (단일 프레임) */
-          result[beh] = [map[imgType]];
+      for (const [beh, frameTypes] of Object.entries(BEHAVIOR_FRAME_TYPES)) {
+        const frames = frameTypes.map(t => map[t]).filter(Boolean);
+        if (frames.length === 4) {
+          /* 4프레임 모두 있으면 애니메이션 세트 (idle 포함해서 5프레임) */
+          result[beh] = [idle, ...frames];
+        } else if (frames.length > 0) {
+          /* 일부만 있으면 있는 것만 사용 */
+          result[beh] = [idle, ...frames];
         }
-        /* 없으면 default 폴백 (result에 안 넣으면 아래에서 default 사용) */
+        /* 없으면 default 폴백 */
       }
 
       setFramesByBehavior(result);
     }
     loadAllFrames();
-  }, [characterId, idleUrl]);
+  }, [characterId, idleUrl, stage]);
 
   /* ─── 현재 행동에 맞는 프레임 가져오기 ─── */
 
@@ -392,19 +409,19 @@ export default function BouncingCharacter({
 
   const currentSrc = currentFrames[frameIdx] || currentFrames[0];
   const motion = BEHAVIOR_MOTION[behavior];
-  const specialAction = specialActive ? motion.specialAction : undefined;
 
-  /* 특수 행동 애니메이션 스타일 */
-  let specialStyle = '';
-  if (specialAction === 'bounce_in_place') {
-    specialStyle = 'animation: bounceInPlace 300ms ease infinite;';
-  } else if (specialAction === 'sway') {
-    specialStyle = 'animation: sway 600ms ease-in-out infinite;';
-  } else if (specialAction === 'shake') {
-    specialStyle = 'animation: shake 200ms ease infinite;';
-  } else if (specialAction === 'crouch') {
-    specialStyle = 'animation: crouch 3000ms ease-in-out infinite;';
-  }
+  /* 행동별 CSS 클래스 — 상시 적용 (specialActive 때는 더 강하게) */
+  const behaviorClass = (() => {
+    switch (behavior) {
+      case 'happy':  return 'behave-happy';
+      case 'joyful': return 'behave-joyful';
+      case 'aegyo':  return specialActive ? 'behave-aegyo-strong' : 'behave-aegyo';
+      case 'hungry': return 'behave-hungry';
+      case 'sad':    return 'behave-sad';
+      case 'angry':  return 'behave-hungry'; /* angry는 제거됨, hungry로 폴백 */
+      default:       return '';
+    }
+  })();
 
   return (
     <div
@@ -417,8 +434,8 @@ export default function BouncingCharacter({
     >
       <img
         src={currentSrc}
-        alt="캐릭터"
-        className={specialActive ? `special-${specialAction}` : ''}
+        alt="런닝메이트"
+        className={behaviorClass}
         style={{
           position: 'absolute',
           width: CHAR_SIZE,
@@ -436,21 +453,59 @@ export default function BouncingCharacter({
         }}
       />
 
-      {/* 특수 행동 CSS 키프레임 */}
+      {/* 행동별 상시 CSS 애니메이션 */}
       <style>{`
         ${Object.values(SPECIAL_CSS).join('\n')}
 
-        .special-bounce_in_place {
-          animation: bounceInPlace 300ms ease infinite !important;
+        /* 행복: 미세한 위아래 바운스 */
+        .behave-happy {
+          animation: happyBounce 1.2s ease-in-out infinite;
         }
-        .special-sway {
-          animation: sway 600ms ease-in-out infinite !important;
+        @keyframes happyBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
         }
-        .special-shake {
-          animation: shake 200ms ease infinite !important;
+
+        /* 즐거움: 빠른 위아래 뛰기 */
+        .behave-joyful {
+          animation: bounceInPlace 400ms ease infinite;
         }
-        .special-crouch {
-          animation: crouch 3000ms ease-in-out infinite !important;
+
+        /* 애교: 살랑살랑 */
+        .behave-aegyo {
+          animation: sway 1s ease-in-out infinite;
+        }
+        .behave-aegyo-strong {
+          animation: sway 500ms ease-in-out infinite;
+        }
+
+        /* 배고픔: 느리게 흔들 + 살짝 아래로 */
+        .behave-hungry {
+          animation: hungryWobble 2s ease-in-out infinite;
+        }
+        @keyframes hungryWobble {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(2px) rotate(-3deg); }
+          75% { transform: translateY(2px) rotate(3deg); }
+        }
+
+        /* 슬픔: 천천히 웅크림 */
+        .behave-sad {
+          animation: sadCrouch 3s ease-in-out infinite;
+        }
+        @keyframes sadCrouch {
+          0%, 100% { transform: scaleY(1) translateY(0); }
+          50% { transform: scaleY(0.9) translateY(6px); }
+        }
+
+        /* 화남: 빠른 떨림 */
+        .behave-angry {
+          animation: angryShake 150ms ease infinite;
+        }
+        @keyframes angryShake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          75% { transform: translateX(3px); }
         }
       `}</style>
     </div>

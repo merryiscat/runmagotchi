@@ -57,6 +57,27 @@ export default function EggStage({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /* ── DB에서 애정 폴링 (아이템 사용 반영, 3초마다) ── */
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      if (hatching) return;
+      const { data } = await supabase
+        .from('characters')
+        .select('affection')
+        .eq('id', characterId)
+        .single();
+      if (data && data.affection > affection) {
+        setAffection(data.affection);
+        /* 부화 체크 */
+        if (data.affection >= 100) {
+          setHatching(true);
+          setTimeout(() => setShowNaming(true), 2000);
+        }
+      }
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [affection, hatching, characterId, supabase]);
+
   /* ── 주기적 흔들림 ── */
   useEffect(() => {
     const level = getEggShakeLevel(affection);
@@ -93,10 +114,13 @@ export default function EggStage({
     setHearts(prev => [...prev, { uid, x, y }]);
     setTimeout(() => setHearts(prev => prev.filter(h => h.uid !== uid)), 800);
 
-    /* 터치 계산 */
-    const result = calcEggTouch(touches);
-    setTouches(result.newTouches);
-    setAffection(result.newAffection);
+    /* 터치 → 애정 소량 증가 (100터치 = 1애정) */
+    const newTouches = touches + 1;
+    const touchAffection = Math.floor(newTouches / 100);
+    /* 현재 애정과 터치 기반 애정 중 큰 쪽 유지 (아이템으로 올린 애정 보존) */
+    const newAffection = Math.min(100, Math.max(affection, touchAffection));
+    setTouches(newTouches);
+    setAffection(newAffection);
 
     /* DB 저장 (디바운스: 마지막 터치 후 1초) */
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -104,17 +128,16 @@ export default function EggStage({
       await supabase
         .from('characters')
         .update({
-          egg_touches: result.newTouches,
-          affection: result.newAffection,
+          egg_touches: newTouches,
+          affection: newAffection,
           stats_updated_at: new Date().toISOString(),
         })
         .eq('id', characterId);
     }, 1000);
 
-    /* 부화 트리거 */
-    if (result.hatched) {
+    /* 부화 트리거 — 애정 100 이상이면 부화 (터치든 아이템이든) */
+    if (newAffection >= 100) {
       setHatching(true);
-      /* 부화 연출 후 이름짓기 */
       setTimeout(() => setShowNaming(true), 2000);
     }
   }, [touches, hatching, characterId, supabase]);

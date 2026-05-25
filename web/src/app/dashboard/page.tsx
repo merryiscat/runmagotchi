@@ -75,21 +75,45 @@ export default async function DashboardPage() {
   const coins = character.tokens || 0;
 
   // 도트 idle 이미지
-  const { data: pixelImg } = await supabase
+  /* 현재 stage에 맞는 pixel_idle → 없으면 최신 것 폴백 */
+  let pixelImg = (await supabase
     .from('character_images')
     .select('url')
     .eq('character_id', character.id)
     .eq('type', 'pixel_idle')
-    .single();
+    .eq('stage', character.stage)
+    .single()).data;
 
-  // 일러스트 이미지
-  const { data: illustImg } = await supabase
+  if (!pixelImg) {
+    pixelImg = (await supabase
+      .from('character_images')
+      .select('url')
+      .eq('character_id', character.id)
+      .eq('type', 'pixel_idle')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()).data;
+  }
+
+  /* 현재 stage 일러스트 → 없으면 최신 것 폴백 */
+  let illustImg = (await supabase
     .from('character_images')
     .select('url')
     .eq('character_id', character.id)
     .eq('type', 'illust')
-    .eq('stage', 'baby')
-    .single();
+    .eq('stage', character.stage)
+    .single()).data;
+
+  if (!illustImg) {
+    illustImg = (await supabase
+      .from('character_images')
+      .select('url')
+      .eq('character_id', character.id)
+      .eq('type', 'illust')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()).data;
+  }
 
   return (
     <div className="frame frame--web" style={{ minHeight: '100vh', maxWidth: 'none' }}>
@@ -104,7 +128,7 @@ export default async function DashboardPage() {
           {/* 일러스트 보기 버튼 — 부화 후에만 표시 (알 상태는 스포일러) */}
           {character.hatched && illustImg?.url && <IllustButton url={illustImg.url} />}
 
-          {/* 격자 + 줌 + 콘텐츠 (전부 ZoomableStage 안에서 같이 줌) */}
+          {/* 격자 + 줌 + 알 */}
           <div style={{ position: 'absolute', inset: 0 }}>
             <ZoomableStage>
               {!character.hatched ? (
@@ -118,20 +142,22 @@ export default async function DashboardPage() {
                 ) : character.image_status === 'failed' ? (
                   <RetryCharacter characterId={character.id} />
                 ) : null
-              ) : (
-                <StageWithFeeding
-                  characterId={character.id}
-                  idleUrl={pixelImg?.url}
-                  inventory={character.inventory || {}}
-                  exp={character.total_exp || 0}
-                  level={character.level || 0}
-                  hunger={currentHunger}
-                  affection={currentAffection}
-                  hatched={true}
-                />
-              )}
+              ) : null}
             </ZoomableStage>
           </div>
+
+          {/* 먹이주기 — 격자/줌 위에 별도 레이어 (알: 애정만 / 부화 후: 전체 + 캐릭터) */}
+          <StageWithFeeding
+            characterId={character.id}
+            idleUrl={character.hatched ? pixelImg?.url : undefined}
+            stage={character.stage}
+            inventory={character.inventory || {}}
+            exp={character.total_exp || 0}
+            level={character.level || 0}
+            hunger={currentHunger}
+            affection={currentAffection}
+            hatched={!!character.hatched}
+          />
 
           {/* 스테이지 하단: 이름 */}
           <div className="stage__footer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
