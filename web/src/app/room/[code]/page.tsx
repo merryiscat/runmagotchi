@@ -175,9 +175,11 @@ export default function RoomPage() {
     touchTracker.current.record();
   }, []);
 
-  /* ── 목표 진행률 ── */
+  /* ── 목표 진행률 (멤버 합산 km으로 실시간 계산) ── */
+  const memberTotalKm = members.reduce((s, m) => s + m.total_km, 0);
+  const goalCurrentKm = goal ? Math.max(memberTotalKm, Number(goal.current_km)) : 0;
   const goalPercent = goal
-    ? Math.min(100, Math.round((Number(goal.current_km) / Number(goal.target_km)) * 100))
+    ? Math.min(100, Math.round((goalCurrentKm / Number(goal.target_km)) * 100))
     : 0;
 
   /* ── 선택된 멤버 데이터 ── */
@@ -450,7 +452,7 @@ export default function RoomPage() {
               <>
                 <div className="stats-row" style={{ marginBottom: 'var(--s-3)' }}>
                   <div>
-                    <div className="stat-v">{Number(goal.current_km).toFixed(1)}</div>
+                    <div className="stat-v">{goalCurrentKm.toFixed(1)}</div>
                     <div className="stat-l">달성</div>
                   </div>
                   <div>
