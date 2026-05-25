@@ -53,6 +53,8 @@ interface RoomGoal {
   start_date: string;
   end_date: string;
   completed: boolean;
+  reward_tokens?: number;
+  reward_exp?: number;
 }
 
 interface RoomInfo {
@@ -470,6 +472,33 @@ export default function RoomPage() {
                     transition: 'width 0.3s',
                   }} />
                 </div>
+
+                {/* 보상 표시 */}
+                {(goal.reward_tokens || goal.reward_exp) ? (
+                  <div style={{
+                    marginTop: 'var(--s-2)',
+                    fontSize: 13, color: 'var(--ink-muted)',
+                    display: 'flex', alignItems: 'center', gap: 'var(--s-2)',
+                  }}>
+                    <span>달성 보상:</span>
+                    {goal.reward_tokens ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: 14, height: 14, borderRadius: '50%',
+                          background: 'var(--hwang)', color: 'var(--on-hwang)',
+                          fontSize: 8, fontWeight: 900, fontFamily: 'serif',
+                        }}>₩</span>
+                        {goal.reward_tokens}
+                      </span>
+                    ) : null}
+                    {goal.reward_exp ? (
+                      <span style={{ color: 'var(--cheong)', fontWeight: 700 }}>
+                        +{goal.reward_exp} EXP
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="text-sm text-muted" style={{ padding: 'var(--s-3) 0' }}>

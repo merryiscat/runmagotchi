@@ -10,6 +10,7 @@
  *   delete  — 방 삭제 (방장만)
  *   set-goal — 팀 km 목표 설정 (방장만)
  *   members — 방 멤버 + 캐릭터 정보 조회
+ *   list-presets — 활성 목표 프리셋 목록
  */
 
 import { NextResponse } from 'next/server';
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
       case 'delete':  return handleDelete(body);
       case 'set-goal': return handleSetGoal(body);
       case 'members': return handleMembers(body);
+      case 'list-presets': return handleListPresets();
       default:
         return NextResponse.json({ error: '알 수 없는 action' }, { status: 400 });
     }
@@ -206,8 +208,14 @@ async function handleSetGoal(body: {
   target_km: number;
   start_date: string;
   end_date: string;
+  preset_id?: string;
+  reward_tokens?: number;
+  reward_exp?: number;
 }) {
-  const { user_id, room_id, target_km, start_date, end_date } = body;
+  const {
+    user_id, room_id, target_km, start_date, end_date,
+    preset_id, reward_tokens = 0, reward_exp = 0,
+  } = body;
 
   /* 방장 확인 */
   const { data: room } = await supabase
@@ -230,7 +238,12 @@ async function handleSetGoal(body: {
   /* 새 목표 생성 */
   const { data: goal, error } = await supabase
     .from('room_goals')
-    .insert({ room_id, target_km, start_date, end_date })
+    .insert({
+      room_id, target_km, start_date, end_date,
+      preset_id: preset_id || null,
+      reward_tokens,
+      reward_exp,
+    })
     .select()
     .single();
 
@@ -239,6 +252,23 @@ async function handleSetGoal(body: {
   }
 
   return NextResponse.json({ goal });
+}
+
+/* ─── 활성 목표 프리셋 목록 ─── */
+
+async function handleListPresets() {
+  const { data, error } = await supabase
+    .from('goal_presets')
+    .select('*')
+    .eq('active', true)
+    .order('type')
+    .order('target_km', { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ presets: data || [] });
 }
 
 /* ─── 멤버 + 캐릭터 정보 조회 ─── */
