@@ -274,8 +274,8 @@ export default async function RoomsPage() {
                           const rawProgress = room.goalKm
                             ? Math.round((m.km / room.goalKm!) * 100)
                             : 0;
-                          /* 100% 미만이면 깃발 앞(95%)까지, 달성하면 깃발 위치(98%)에 고정 */
-                          const memberProgress = rawProgress >= 100 ? 98 : Math.min(95, rawProgress);
+                          /* 100% 미만이면 깃발 앞(95%)까지, 달성하면 깃발 위치(100%)에 고정 */
+                          const memberProgress = rawProgress >= 100 ? 100 : Math.min(95, rawProgress);
                           return (
                             <div key={mi} style={{
                               position: 'absolute',
