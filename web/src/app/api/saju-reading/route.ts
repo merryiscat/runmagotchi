@@ -13,6 +13,7 @@ import { Solar } from 'lunar-typescript';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
+import { pickRandomCandidates, candidatesToPromptText } from '@/lib/animal-pool';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -162,6 +163,10 @@ export async function POST(request: Request) {
 ${daYuns.map((d: { age: number; ganZhi: string }) => `${d.age}세: ${d.ganZhi}`).join(' | ')}
 `.trim();
 
+    // ── 동물 후보 랜덤 추출 (매번 다른 조합) ──
+    const candidates = pickRandomCandidates(15);
+    const candidateText = candidatesToPromptText(candidates);
+
     // ── GPT-4.1 호출 (structured output) ──
     const response = await openai.chat.completions.parse({
       model: 'gpt-4.1',
@@ -174,13 +179,15 @@ ${daYuns.map((d: { age: number; ganZhi: string }) => `${d.age}세: ${d.ganZhi}`)
 핵심 원칙:
 - "전투형 몬스터"가 아니라 "성격이 보이는 동물"로 추천할 것.
 - 감정 구조, 행동 습관, 에너지 패턴이 닮은 동물을 골라라.
-- 예: 여우(매력, 감정성, 외로움), 수달(관계 의존, 물 기운), 올빼미(야행성, 직관)
 - 디지몬보다는 포켓몬, 비스트스타즈, 치이카와 감성.
 
 동물 선택 규칙:
+- 아래 [추천 후보 동물 목록]에서 사주에 맞는 동물을 골라라.
+- 후보에 없는 동물도 사주에 정말 잘 맞으면 자유롭게 추천 가능하지만, 가능하면 후보 목록을 우선 활용할 것.
 - animals(실존 동물 3마리): 각각 서로 다른 성격 측면을 대표. 겹치지 않게.
-- fantasyAnimal(판타지 1마리): animals 3마리와 독립적으로, 사주 전체 에너지에서 도출. animals를 합치지 말 것.
+- fantasyAnimal(판타지 1마리): animals 3마리와 독립적으로, 사주 전체 에너지에서 도출.
 - 4마리 모두 서로 다른 동물이어야 함.
+- 품종 수준으로 구체적으로 적어라 (예: "개"가 아니라 "시바견", "고양이"가 아니라 "러시안 블루").
 
 보조 특성 규칙:
 - 신살/결핍에서 파생되는 구체적 외형 + 감정 반응형 생태적 변화.
@@ -188,7 +195,10 @@ ${daYuns.map((d: { age: number; ganZhi: string }) => `${d.age}세: ${d.ganZhi}`)
 
 색상 규칙:
 - 오행 균형, 납음, 기질에서 도출. 3개 모두 hex 코드 포함.
-- 메인 색(가장 넓은 면적), 보조 색(중간), 포인트 색(작은 강조).`,
+- 메인 색(가장 넓은 면적), 보조 색(중간), 포인트 색(작은 강조).
+
+[추천 후보 동물 목록]
+${candidateText}`,
         },
         {
           role: 'user',
