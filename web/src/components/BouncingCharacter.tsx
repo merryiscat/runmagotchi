@@ -7,7 +7,7 @@
  *   aegyo   — 터치 방향으로 다가와서 좌우 흔들기
  *   hungry  — 느릿느릿, 가끔 흔들거림
  *   sad     — 구석에 웅크림, 거의 안 움직임
- *   angry   — 빠르게 왔다갔다, 거친 움직임
+ *   (angry 제거됨 — hungry로 통합)
  *
  * 터치 인터랙션:
  *   - 애정 ≥ 60: 터치 위치로 다가옴 → aegyo 행동
@@ -418,7 +418,6 @@ export default function BouncingCharacter({
       case 'aegyo':  return specialActive ? 'behave-aegyo-strong' : 'behave-aegyo';
       case 'hungry': return 'behave-hungry';
       case 'sad':    return 'behave-sad';
-      case 'angry':  return 'behave-hungry'; /* angry는 제거됨, hungry로 폴백 */
       default:       return '';
     }
   })();
@@ -498,15 +497,6 @@ export default function BouncingCharacter({
           50% { transform: scaleY(0.9) translateY(6px); }
         }
 
-        /* 화남: 빠른 떨림 */
-        .behave-angry {
-          animation: angryShake 150ms ease infinite;
-        }
-        @keyframes angryShake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-3px); }
-          75% { transform: translateX(3px); }
-        }
       `}</style>
     </div>
   );

@@ -4,7 +4,7 @@
  * 1단계: baby illust + final illust 병렬 생성
  * 2단계: baby illust → 도트 변환 (pixel_idle)
  * 3단계: pixel_idle 참조 → bounce1~4 (폴짝폴짝 뛰는 애니메이션)
- * 4단계: pixel_idle 참조 → 행동 모션 4종 (happy/hungry/sad/angry)
+ * 4단계: pixel_idle 참조 → 행동 모션 5종 (happy/hungry/sad/joyful/aegyo)
  *
  * service_role 키로 RLS 우회. Storage + DB 직접 저장.
  */

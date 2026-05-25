@@ -8,10 +8,9 @@
  * 행동 패턴 (우선순위 순):
  *   1. aegyo   — 애교: 애정 높음 + 터치 직후
  *   2. joyful  — 즐거움: 먹이 먹은 직후 / 애정 받은 직후
- *   3. angry   — 화남: 배고픔 극심 + 애정 바닥
- *   4. sad     — 슬픔: 애정 낮음
- *   5. hungry  — 배고픔: 배고픔 낮음
- *   6. happy   — 행복: 기본 상태 (배고픔/애정 모두 괜찮음)
+ *   3. sad     — 슬픔: 애정 낮음
+ *   4. hungry  — 배고픔: 배고픔 낮음
+ *   5. happy   — 행복: 기본 상태 (배고픔/애정 모두 괜찮음)
  *
  * 스탯 상호작용:
  *   - 배고픔 낮은 상태 지속 → 애정 추가 감소
@@ -21,8 +20,8 @@
 
 /* ─── 행동 타입 ─── */
 
-/** 캐릭터가 취할 수 있는 6가지 행동 */
-export type Behavior = 'happy' | 'sad' | 'hungry' | 'angry' | 'joyful' | 'aegyo';
+/** 캐릭터가 취할 수 있는 5가지 행동 */
+export type Behavior = 'happy' | 'sad' | 'hungry' | 'joyful' | 'aegyo';
 
 /** 행동별 움직임 설정 */
 export interface BehaviorMotion {
@@ -92,15 +91,6 @@ export const BEHAVIOR_MOTION: Record<Behavior, BehaviorMotion> = {
     specialAction: 'crouch',
   },
 
-  /* 화남: 빠르게 왔다갔다, 거친 움직임 */
-  angry: {
-    pauseMin: 800,
-    pauseMax: 2000,
-    moveRange: 100,
-    hopScale: 0.6,
-    frameSpeedScale: 0.5,
-    specialAction: 'shake',
-  },
 };
 
 /* ─── 행동별 이미지 타입 매핑 ─── */
