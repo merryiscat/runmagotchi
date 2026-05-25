@@ -10,11 +10,11 @@
  *   - 배경 클릭 닫기 제거
  *   - 취소 버튼으로만 닫음
  *
- * 운영 목표 프리셋:
+ * 목표 프리셋:
  *   - 모달 열릴 때 프리셋 목록 fetch
  *   - 주간/월간 탭 → 카드 선택 → 자동 채움
- *   - 목표 km은 최소치 (프리셋 이상만 입력 가능)
- *   - "직접 설정" 선택 시 자유 입력
+ *   - 목표 km은 최소치 (+ 버튼으로만 올릴 수 있음)
+ *   - 보상은 코인만
  */
 
 'use client';
@@ -30,7 +30,6 @@ interface GoalPreset {
   target_km: number;
   duration_days: number;
   reward_tokens: number;
-  reward_exp: number;
 }
 
 /* ─── Props ─── */
@@ -39,6 +38,9 @@ interface Props {
   userId: string;
   characterId: string;
 }
+
+/* ─── km 증감 단위 ─── */
+const KM_STEP = 5;
 
 export default function RoomActions({ userId, characterId }: Props) {
   /* 어떤 모달이 열려있는지 ('code' | 'create' | null) */
@@ -50,13 +52,15 @@ export default function RoomActions({ userId, characterId }: Props) {
   /* 프리셋 관련 상태 */
   const [presets, setPresets] = useState<GoalPreset[]>([]);
   const [presetTab, setPresetTab] = useState<'weekly' | 'monthly'>('weekly');
-  /* null = 직접 설정, string = 선택된 프리셋 id */
+  /* 선택된 프리셋 id (첫 번째 프리셋 자동 선택) */
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+
+  /* 합산 목표 km (상태로 관리 — +/- 버튼용) */
+  const [targetKm, setTargetKm] = useState(0);
 
   /* 비제어 input ref — 한글 IME 간섭 방지 */
   const codeRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  const targetKmRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
 
@@ -69,37 +73,49 @@ export default function RoomActions({ userId, characterId }: Props) {
       body: JSON.stringify({ action: 'list-presets' }),
     })
       .then(r => r.json())
-      .then(d => setPresets(d.presets || []))
+      .then(d => {
+        const list = d.presets || [];
+        setPresets(list);
+        /* 첫 번째 프리셋 자동 선택 */
+        const firstWeekly = list.find((p: GoalPreset) => p.type === 'weekly');
+        if (firstWeekly) {
+          setSelectedPreset(firstWeekly.id);
+          setTargetKm(firstWeekly.target_km);
+          applyPresetDates(firstWeekly);
+        }
+      })
       .catch(() => {});
   }, [modal]);
 
   /* 선택된 프리셋 객체 */
   const activePreset = presets.find(p => p.id === selectedPreset) || null;
 
-  /* ── 프리셋 선택 시 input 값 자동 채움 ── */
-  function applyPreset(preset: GoalPreset) {
-    setSelectedPreset(preset.id);
-
-    /* 목표 km → 프리셋 최소치로 설정 */
-    if (targetKmRef.current) {
-      targetKmRef.current.value = String(preset.target_km);
-      targetKmRef.current.min = String(preset.target_km);
-    }
-
-    /* 기간 자동 계산 (시작: 오늘, 종료: +duration_days) */
+  /* ── 프리셋 기간 자동 채움 (날짜만) ── */
+  function applyPresetDates(preset: GoalPreset) {
     const today = new Date();
     const end = new Date(today.getTime() + preset.duration_days * 24 * 60 * 60 * 1000);
     if (startDateRef.current) startDateRef.current.value = today.toISOString().split('T')[0];
     if (endDateRef.current) endDateRef.current.value = end.toISOString().split('T')[0];
   }
 
-  /* ── "직접 설정" 선택 ── */
-  function clearPreset() {
-    setSelectedPreset(null);
-    if (targetKmRef.current) {
-      targetKmRef.current.value = '';
-      targetKmRef.current.min = '0';
-    }
+  /* ── 프리셋 선택 ── */
+  function applyPreset(preset: GoalPreset) {
+    setSelectedPreset(preset.id);
+    setTargetKm(preset.target_km);
+    applyPresetDates(preset);
+  }
+
+  /* ── 탭 변경 시 해당 탭 첫 프리셋 자동 선택 ── */
+  function handleTabChange(tab: 'weekly' | 'monthly') {
+    setPresetTab(tab);
+    const first = presets.find(p => p.type === tab);
+    if (first) applyPreset(first);
+  }
+
+  /* ── km 증감 (최소치 이하로 못 내림) ── */
+  function handleKmChange(delta: number) {
+    const minKm = activePreset?.target_km || 0;
+    setTargetKm(prev => Math.max(minKm, prev + delta));
   }
 
   /* ── 코드로 입장 ── */
@@ -134,14 +150,13 @@ export default function RoomActions({ userId, characterId }: Props) {
     const name = nameRef.current?.value.trim();
     if (!name || name.length < 2 || !characterId) return;
 
-    let targetKm = Number(targetKmRef.current?.value) || 0;
     const startDate = startDateRef.current?.value || '';
     const endDate = endDateRef.current?.value || '';
 
     /* 프리셋 최소치 검증 */
-    if (activePreset && targetKm < activePreset.target_km) {
-      targetKm = activePreset.target_km;
-    }
+    const finalKm = activePreset
+      ? Math.max(targetKm, activePreset.target_km)
+      : targetKm;
 
     setCreating(true);
     setMessage('');
@@ -165,8 +180,8 @@ export default function RoomActions({ userId, characterId }: Props) {
       return;
     }
 
-    /* 목표 설정 (입력했으면) */
-    if (targetKm > 0 && startDate && endDate) {
+    /* 목표 설정 */
+    if (finalKm > 0 && startDate && endDate) {
       await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -174,12 +189,12 @@ export default function RoomActions({ userId, characterId }: Props) {
           action: 'set-goal',
           user_id: userId,
           room_id: data.room.id,
-          target_km: targetKm,
+          target_km: finalKm,
           start_date: startDate,
           end_date: endDate,
           preset_id: selectedPreset || undefined,
           reward_tokens: activePreset?.reward_tokens || 0,
-          reward_exp: activePreset?.reward_exp || 0,
+          reward_exp: 0,
         }),
       });
     }
@@ -192,6 +207,7 @@ export default function RoomActions({ userId, characterId }: Props) {
     setModal(null);
     setMessage('');
     setSelectedPreset(null);
+    setTargetKm(0);
   }
 
   /* ── 탭별 프리셋 필터 ── */
@@ -226,7 +242,6 @@ export default function RoomActions({ userId, characterId }: Props) {
           padding: 'var(--s-4)',
         }}>
           <div
-            /* 모달 내부 클릭이 배경으로 전파되지 않도록 차단 */
             onClick={e => e.stopPropagation()}
             style={{
               background: 'var(--paper)',
@@ -285,7 +300,7 @@ export default function RoomActions({ userId, characterId }: Props) {
                   style={{ fontFamily: 'var(--font-handwriting)', fontSize: 18 }}
                 />
 
-                {/* ═══ 운영 목표 프리셋 ═══ */}
+                {/* ═══ 목표 프리셋 ═══ */}
                 {presets.length > 0 && (
                   <div style={{
                     borderTop: '1px dashed var(--line)',
@@ -296,7 +311,7 @@ export default function RoomActions({ userId, characterId }: Props) {
                       fontFamily: 'var(--font-penscript)', fontSize: 18,
                       marginBottom: 'var(--s-2)',
                     }}>
-                      운영 목표
+                      목표
                     </div>
 
                     {/* 주간 / 월간 탭 */}
@@ -304,7 +319,7 @@ export default function RoomActions({ userId, characterId }: Props) {
                       {(['weekly', 'monthly'] as const).map(tab => (
                         <button
                           key={tab}
-                          onClick={() => setPresetTab(tab)}
+                          onClick={() => handleTabChange(tab)}
                           style={{
                             flex: 1, padding: '6px 0',
                             border: presetTab === tab ? '1.5px solid var(--ink-strong)' : '1px solid var(--line)',
@@ -326,7 +341,7 @@ export default function RoomActions({ userId, characterId }: Props) {
                         return (
                           <button
                             key={p.id}
-                            onClick={() => isSelected ? clearPreset() : applyPreset(p)}
+                            onClick={() => applyPreset(p)}
                             style={{
                               padding: '10px 12px',
                               border: isSelected ? '2px solid var(--cheong)' : '1px solid var(--line)',
@@ -351,38 +366,20 @@ export default function RoomActions({ userId, characterId }: Props) {
                             }}>
                               <span>{p.target_km}km 이상</span>
                               <span>{p.duration_days}일</span>
-                              {(p.reward_tokens > 0 || p.reward_exp > 0) && (
+                              {p.reward_tokens > 0 && (
                                 <span style={{ color: 'var(--hwang)' }}>
-                                  {p.reward_tokens > 0 && `₩${p.reward_tokens}`}
-                                  {p.reward_tokens > 0 && p.reward_exp > 0 && ' + '}
-                                  {p.reward_exp > 0 && `${p.reward_exp}EXP`}
+                                  ₩{p.reward_tokens}
                                 </span>
                               )}
                             </div>
                           </button>
                         );
                       })}
-
-                      {/* 직접 설정 옵션 */}
-                      <button
-                        onClick={clearPreset}
-                        style={{
-                          padding: '8px 12px',
-                          border: selectedPreset === null ? '2px solid var(--cheong)' : '1px dashed var(--line)',
-                          background: selectedPreset === null ? 'var(--clay-soft)' : 'var(--paper)',
-                          cursor: 'pointer', textAlign: 'center',
-                          fontFamily: 'var(--font-handwriting)', fontSize: 14,
-                          color: 'var(--ink-muted)',
-                        }}
-                      >
-                        직접 설정
-                        {selectedPreset === null && <span style={{ color: 'var(--cheong)', marginLeft: 6 }}>✓</span>}
-                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* ═══ 목표 세부 설정 ═══ */}
+                {/* ═══ 세부 설정 ═══ */}
                 <div style={{
                   borderTop: '1px dashed var(--line)',
                   paddingTop: 'var(--s-3)',
@@ -392,35 +389,75 @@ export default function RoomActions({ userId, characterId }: Props) {
                     fontFamily: 'var(--font-penscript)', fontSize: 18,
                     marginBottom: 'var(--s-2)',
                   }}>
-                    팀 목표
+                    세부 설정
                   </div>
 
-                  {/* 프리셋 선택 시 안내 문구 */}
-                  {activePreset && (
-                    <div style={{
-                      fontFamily: 'var(--font-handwriting)', fontSize: 12,
-                      color: 'var(--cheong)', marginBottom: 'var(--s-2)',
-                    }}>
-                      최소 {activePreset.target_km}km · 더 높은 목표로 변경 가능
-                    </div>
-                  )}
-
-                  {/* 목표 km */}
+                  {/* 합산 목표 (km) — 숫자 고정 + +/- 버튼 */}
                   <div style={{ marginBottom: 'var(--s-2)' }}>
                     <label style={{
                       fontFamily: 'var(--font-handwriting)', fontSize: 13,
-                      color: 'var(--ink-muted)', display: 'block', marginBottom: 2,
+                      color: 'var(--ink-muted)', display: 'block', marginBottom: 4,
                     }}>
                       합산 목표 (km)
                     </label>
-                    <input
-                      ref={targetKmRef}
-                      type="number"
-                      placeholder="예: 100"
-                      min={activePreset ? activePreset.target_km : 0}
-                      className="input"
-                      style={{ fontFamily: 'var(--font-handwriting)', fontSize: 16 }}
-                    />
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--s-2)',
+                    }}>
+                      {/* - 버튼 */}
+                      <button
+                        onClick={() => handleKmChange(-KM_STEP)}
+                        disabled={targetKm <= (activePreset?.target_km || 0)}
+                        style={{
+                          width: 36, height: 36,
+                          border: '1px solid var(--line)',
+                          background: 'var(--paper)',
+                          fontFamily: 'var(--font-handwriting)', fontSize: 20,
+                          cursor: targetKm <= (activePreset?.target_km || 0) ? 'not-allowed' : 'pointer',
+                          opacity: targetKm <= (activePreset?.target_km || 0) ? 0.3 : 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        -
+                      </button>
+
+                      {/* 숫자 표시 (수정 불가) */}
+                      <div style={{
+                        flex: 1, textAlign: 'center',
+                        fontFamily: 'var(--font-handwriting)', fontSize: 24, fontWeight: 700,
+                        color: 'var(--ink-strong)',
+                        padding: '4px 0',
+                        background: 'var(--clay-soft)',
+                        border: '1px solid var(--line)',
+                        userSelect: 'none',
+                      }}>
+                        {targetKm} km
+                      </div>
+
+                      {/* + 버튼 */}
+                      <button
+                        onClick={() => handleKmChange(KM_STEP)}
+                        style={{
+                          width: 36, height: 36,
+                          border: '1px solid var(--line)',
+                          background: 'var(--paper)',
+                          fontFamily: 'var(--font-handwriting)', fontSize: 20,
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* 최소치 안내 */}
+                    {activePreset && (
+                      <div style={{
+                        fontFamily: 'var(--font-handwriting)', fontSize: 11,
+                        color: 'var(--ink-muted)', marginTop: 4,
+                      }}>
+                        최소 {activePreset.target_km}km
+                      </div>
+                    )}
                   </div>
 
                   {/* 기간 — 세로 배치 */}
@@ -459,8 +496,8 @@ export default function RoomActions({ userId, characterId }: Props) {
                     </div>
                   </div>
 
-                  {/* 보상 표시 (프리셋 선택 시) */}
-                  {activePreset && (activePreset.reward_tokens > 0 || activePreset.reward_exp > 0) && (
+                  {/* 달성 보상 (코인만) */}
+                  {activePreset && activePreset.reward_tokens > 0 && (
                     <div style={{
                       marginTop: 'var(--s-3)',
                       padding: '8px 12px',
@@ -470,22 +507,15 @@ export default function RoomActions({ userId, characterId }: Props) {
                       display: 'flex', alignItems: 'center', gap: 'var(--s-2)',
                     }}>
                       <span style={{ color: 'var(--ink-muted)' }}>달성 보상:</span>
-                      {activePreset.reward_tokens > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: 14, height: 14, borderRadius: '50%',
-                            background: 'var(--hwang)', color: 'var(--on-hwang)',
-                            fontSize: 8, fontWeight: 900, fontFamily: 'serif',
-                          }}>₩</span>
-                          {activePreset.reward_tokens}
-                        </span>
-                      )}
-                      {activePreset.reward_exp > 0 && (
-                        <span style={{ color: 'var(--cheong)', fontWeight: 700 }}>
-                          +{activePreset.reward_exp} EXP
-                        </span>
-                      )}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: 14, height: 14, borderRadius: '50%',
+                          background: 'var(--hwang)', color: 'var(--on-hwang)',
+                          fontSize: 8, fontWeight: 900, fontFamily: 'serif',
+                        }}>₩</span>
+                        {activePreset.reward_tokens}
+                      </span>
                     </div>
                   )}
                 </div>

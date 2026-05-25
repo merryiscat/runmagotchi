@@ -44,9 +44,5 @@ ALTER TABLE public.room_goals
 /* ── 3. 샘플 프리셋 (초기 데이터) ── */
 
 INSERT INTO public.goal_presets (title, type, target_km, duration_days, reward_tokens, reward_exp) VALUES
-  ('주간 목표: 가볍게 시작',   'weekly',  15,  7, 50,  30),
-  ('주간 목표: 꾸준히 달리기', 'weekly',  30,  7, 100, 60),
-  ('주간 목표: 도전자',       'weekly',  50,  7, 200, 100),
-  ('월간 목표: 입문',         'monthly', 50,  30, 150, 80),
-  ('월간 목표: 러너',         'monthly', 100, 30, 300, 150),
-  ('월간 목표: 마라토너',     'monthly', 200, 30, 500, 300);
+  ('테스트 목표',                    'weekly',  10,  7,  500,  0),
+  ('위드런 준비(2026년 6월 27일)',   'monthly', 50,  32, 5000, 0);
