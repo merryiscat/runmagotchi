@@ -318,24 +318,17 @@ async function handleMembers(body: { room_id: string }) {
       .eq('type', 'pixel_idle')
       .single();
 
-    /* 런닝 기록 (최근 10건 — UI 표시용) */
-    const { data: runs } = await supabase
+    /* 런닝 기록 — 목표 기간 내만 조회 (UI 표시 + 진행률 겸용) */
+    let runsQuery = supabase
       .from('runs')
       .select('distance_km, duration_minutes, pace, run_date, tokens_earned')
-      .eq('user_id', m.user_id)
-      .order('run_date', { ascending: false })
-      .limit(10);
-
-    /* 목표 기간 내 런닝 합산 (진행률용) */
-    let goalQuery = supabase
-      .from('runs')
-      .select('distance_km')
       .eq('user_id', m.user_id);
-    if (activeGoal?.start_date) goalQuery = goalQuery.gte('run_date', activeGoal.start_date);
-    if (activeGoal?.end_date) goalQuery = goalQuery.lte('run_date', activeGoal.end_date);
-    const { data: goalRuns } = await goalQuery;
+    if (activeGoal?.start_date) runsQuery = runsQuery.gte('run_date', activeGoal.start_date);
+    if (activeGoal?.end_date) runsQuery = runsQuery.lte('run_date', activeGoal.end_date);
+    runsQuery = runsQuery.order('run_date', { ascending: false });
+    const { data: runs } = await runsQuery;
 
-    const totalKm = (goalRuns || []).reduce((s, r) => s + Number(r.distance_km), 0);
+    const totalKm = (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
 
     result.push({
       user_id: m.user_id,
