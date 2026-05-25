@@ -276,13 +276,24 @@ async function handleListPresets() {
 async function handleMembers(body: { room_id: string }) {
   const { room_id } = body;
 
+  /* 활성 목표 (멤버 km 필터에 필요하므로 먼저 조회) */
+  const { data: goals } = await supabase
+    .from('room_goals')
+    .select('*')
+    .eq('room_id', room_id)
+    .eq('completed', false)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const activeGoal = goals?.[0] || null;
+
   /* 멤버 목록 조회 */
   const { data: members } = await supabase
     .from('room_members')
     .select('user_id, character_id, joined_at')
     .eq('room_id', room_id);
 
-  /* 각 멤버의 캐릭터 + 프로필 + 이미지를 개별 조회 (조인 대신 확실한 방식) */
+  /* 각 멤버의 캐릭터 + 프로필 + 이미지를 개별 조회 */
   const result = [];
   for (const m of members || []) {
     /* 캐릭터 정보 */
@@ -307,7 +318,7 @@ async function handleMembers(body: { room_id: string }) {
       .eq('type', 'pixel_idle')
       .single();
 
-    /* 런닝 기록 (최근 10건) */
+    /* 런닝 기록 (최근 10건 — UI 표시용) */
     const { data: runs } = await supabase
       .from('runs')
       .select('distance_km, duration_minutes, pace, run_date, tokens_earned')
@@ -315,7 +326,16 @@ async function handleMembers(body: { room_id: string }) {
       .order('run_date', { ascending: false })
       .limit(10);
 
-    const totalKm = (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
+    /* 목표 기간 내 런닝 합산 (진행률용) */
+    let goalQuery = supabase
+      .from('runs')
+      .select('distance_km')
+      .eq('user_id', m.user_id);
+    if (activeGoal?.start_date) goalQuery = goalQuery.gte('run_date', activeGoal.start_date);
+    if (activeGoal?.end_date) goalQuery = goalQuery.lte('run_date', activeGoal.end_date);
+    const { data: goalRuns } = await goalQuery;
+
+    const totalKm = (goalRuns || []).reduce((s, r) => s + Number(r.distance_km), 0);
 
     result.push({
       user_id: m.user_id,
@@ -329,14 +349,5 @@ async function handleMembers(body: { room_id: string }) {
     });
   }
 
-  /* 활성 목표 */
-  const { data: goals } = await supabase
-    .from('room_goals')
-    .select('*')
-    .eq('room_id', room_id)
-    .eq('completed', false)
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  return NextResponse.json({ members: result, goal: goals?.[0] || null });
+  return NextResponse.json({ members: result, goal: activeGoal });
 }

@@ -74,13 +74,15 @@ export default async function RoomsPage() {
       /* 활성 목표 */
       const { data: goals } = await supabase
         .from('room_goals')
-        .select('target_km, current_km')
+        .select('target_km, current_km, start_date, end_date')
         .eq('room_id', room.id)
         .eq('completed', false)
         .order('created_at', { ascending: false })
         .limit(1);
 
-      /* 멤버별 캐릭터 이미지 + 개인 km */
+      const activeGoal = goals?.[0] || null;
+
+      /* 멤버별 캐릭터 이미지 + 목표 기간 내 km */
       const memberMarkers: MemberMarker[] = [];
       for (const m of mList || []) {
         const { data: char } = await supabase
@@ -96,10 +98,14 @@ export default async function RoomsPage() {
           .eq('type', 'pixel_idle')
           .single();
 
-        const { data: runs } = await supabase
+        /* 목표 기간 내 런닝만 합산 */
+        let query = supabase
           .from('runs')
           .select('distance_km')
           .eq('user_id', m.user_id);
+        if (activeGoal?.start_date) query = query.gte('run_date', activeGoal.start_date);
+        if (activeGoal?.end_date) query = query.lte('run_date', activeGoal.end_date);
+        const { data: runs } = await query;
 
         const km = (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
 
@@ -116,7 +122,7 @@ export default async function RoomsPage() {
       rooms.push({
         ...room,
         memberCount: mList?.length || 0,
-        goalKm: goals?.[0] ? Number(goals[0].target_km) : undefined,
+        goalKm: activeGoal ? Number(activeGoal.target_km) : undefined,
         currentKm: totalMemberKm,
         members: memberMarkers,
       });

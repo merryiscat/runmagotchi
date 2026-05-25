@@ -395,7 +395,7 @@ async function updateRoomGoals(userId: string, addedKm: number) {
       /* 활성 목표 조회 */
       const { data: goals } = await supabase
         .from('room_goals')
-        .select('id, target_km, current_km, completed, reward_tokens')
+        .select('id, target_km, current_km, completed, reward_tokens, start_date, end_date')
         .eq('room_id', room_id)
         .eq('completed', false)
         .limit(1);
@@ -403,7 +403,7 @@ async function updateRoomGoals(userId: string, addedKm: number) {
       const goal = goals?.[0];
       if (!goal) continue;
 
-      /* 멤버 전체의 런닝 합산 */
+      /* 멤버 전체의 목표 기간 내 런닝 합산 */
       const { data: members } = await supabase
         .from('room_members')
         .select('user_id')
@@ -411,10 +411,13 @@ async function updateRoomGoals(userId: string, addedKm: number) {
 
       let totalKm = 0;
       for (const m of members || []) {
-        const { data: runs } = await supabase
+        let query = supabase
           .from('runs')
           .select('distance_km')
           .eq('user_id', m.user_id);
+        if (goal.start_date) query = query.gte('run_date', goal.start_date);
+        if (goal.end_date) query = query.lte('run_date', goal.end_date);
+        const { data: runs } = await query;
         totalKm += (runs || []).reduce((s, r) => s + Number(r.distance_km), 0);
       }
 
