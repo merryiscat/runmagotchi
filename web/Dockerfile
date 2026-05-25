@@ -21,11 +21,18 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 빌드 시 필요한 환경변수 (NEXT_PUBLIC_* 만)
+# 빌드 시 필요한 환경변수
+# NEXT_PUBLIC_* : 클라이언트 번들에 인라인됨
+# SUPABASE_SERVICE_ROLE_KEY : API route가 모듈 최상위에서 createClient를 호출하므로
+#   빌드 시점에도 값이 있어야 함 (실제 런타임 키는 docker run --env-file로 덮어씀)
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG SUPABASE_SERVICE_ROLE_KEY=dummy-build-time-key
+ARG OPENAI_API_KEY=dummy-build-time-key
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
 
 # Next.js standalone 모드로 빌드 (이미지 최소화)
 ENV NEXT_TELEMETRY_DISABLED=1

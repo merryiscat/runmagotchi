@@ -9,7 +9,10 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams, origin: requestOrigin } = new URL(request.url);
+  // Docker 컨테이너 내부에서는 origin이 0.0.0.0:3000이 되므로
+  // 환경변수 NEXT_PUBLIC_SITE_URL이 있으면 그걸 우선 사용
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || requestOrigin;
   const code = searchParams.get('code');
 
   const supabase = await createClient();

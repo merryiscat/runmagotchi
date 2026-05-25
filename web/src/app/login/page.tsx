@@ -165,18 +165,6 @@ export default function LoginPage() {
             </svg>
             Google로 시작하기
           </button>
-          <button onClick={() => handleSocialLogin('kakao')} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--s-3)',
-            width: '100%', padding: 'var(--s-3) var(--s-4)',
-            border: '1px solid var(--line)', background: 'var(--surface)',
-            fontSize: 'var(--fs-md)', color: 'var(--ink-default)',
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 3C6.48 3 2 6.36 2 10.44c0 2.66 1.76 4.99 4.4 6.32-.19.72-.7 2.6-.8 3-.12.48.18.47.37.34.15-.1 2.4-1.63 3.36-2.29.88.13 1.78.19 2.67.19 5.52 0 10-3.36 10-7.56S17.52 3 12 3z" fill="#3C1E1E"/>
-            </svg>
-            카카오로 시작하기
-          </button>
         </div>
 
         {/* 가입 링크 → 팝업 */}
